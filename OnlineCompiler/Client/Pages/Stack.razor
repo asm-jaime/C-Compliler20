@@ -1,0 +1,179 @@
+@page "/stack"
+@using OnlineCompiler.Shared
+@inject HttpClient Http
+@using System.Globalization
+@using Microsoft.AspNetCore.Components
+@inject IStringLocalizer<Localization> Loc
+
+<PageTitle>@Loc["OnlineCsharpCompiler"]</PageTitle>
+
+<div class="container my-5">
+    <div class="text-center">
+        <h2>Стек (Stack)</h2>
+    </div>
+    <p>Класс Stack представляет коллекцию, которая использует алгоритм LIFO ("последний вошел - первый вышел"). При такой организации каждый следующий добавленный элемент помещается поверх предыдущего. Извлечение из коллекции происходит в обратном порядке - извлекается тот элемент, который находится выше всех в стеке.
+    </p>
+    <p>Стек - довольно часто встречаемая структура данных в реальной жизни. Банальные примеры стеков - стопка книг или тарелок, где каждую новую книгу или тарелку помещают поверх предыдущей. А извлекают из этой стопки книги/тарелки в обратном порядке - сначала самую верхнюю и так далее. Другой пример - одежда: допустим, человек выходит на улицу в зимнюю погоду и для этого сначала одевает майку, потом рубашку, затем свитер, и в конце куртку. Когда человек снимает с себя одежду - он делает это в обратном порядке: сначала снимает куртку, потом свитер и так далее.
+    </p>
+    <h3>Пример использования словаря</h3>
+
+    <p>Вот визуальное представление внутренней структуры Стек:</p>
+    <img src="7.png" alt="Визуальное представление внутренней структуры стек">
+
+    <h3>В классе Stack можно выделить следующие методы:</h3>
+    <ul>
+        <li>Clear: очищает стек</li>
+        <li>Contains: проверяет наличие в стеке элемента и возвращает true при его наличии</li>
+        <li>Push: добавляет элемент в стек в верхушку стека</li>
+        <li>Pop: извлекает и возвращает первый элемент из стека</li>
+        <li>Peek: просто возвращает первый элемент из стека без его удаления</li>
+        <li>bool TryPop(out T result): удаляет из стека первый элемент и передает его в переменную result, возвращает true, если очередь не пуста и элемент успешно получен.</li>
+        <li>bool TryPeek(out T result): передает в переменную result первый элемент стека без его извлечения, возвращает true, если элемент успешно получен.</li>
+    </ul>
+</div>
+
+@Loc["Description"]
+@if (userExecuted)
+{
+    <br/>
+    <button class="btn btn-warning" @onclick="ToggleCode">@if (showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
+    if (showCode)
+    {
+        <p></p>
+        <CodeEditor @bind-Code="InnerCode">@TemplateStack.StackCode
+        </CodeEditor>
+        <br/>
+
+        <button class="btn btn-primary @(ExecuteButtonDisabled ? "disabled" : "")" @onclick="ExecuteCode">@Loc["Execute"]</button>
+    }
+}                                                                                                               
+
+    <p></p>
+<p>Пишите свой код тут: </p>
+<CodeEditor @bind-Code="UserInnerCode">@TemplateStack.UserStackCode
+</CodeEditor>
+<br />
+<button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { userExecuted = true; await UserExecuteCode(); })">@Loc["Execute"]</button>
+
+<br />
+@if (ExecutionInfo != null)
+{
+    <text>&nbsp;</text>
+    switch (ExecutionInfo.Status)
+    {
+        case ExecutionInfo.ExecutionStatus.Preparing:
+            {
+                <status-indicator pulse />
+                <label>@Loc["Preparing"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Compiling:
+            {
+                <status-indicator active />
+                <label>@Loc["Compiling"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.CompilationError:
+            {
+                <status-indicator negative />
+                <label>@Loc["CompilationError"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Running:
+            {
+                <status-indicator active pulse />
+                <label>@Loc["Running"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Finished:
+            {
+                <status-indicator positive />
+                <label>@Loc["Finished"]</label>
+                break;
+            }
+    }
+    <br />
+    if (ExecutionInfo.Output != null && OutputSplitByNewLines != null)
+    {
+        @foreach (string line in OutputSplitByNewLines)
+        {
+            <p>@line</p>
+        }
+        <p>Время: @ExecutionInfo.CompilerTime мс</p>
+    }
+}
+
+@code
+{
+    bool showCode = false;
+
+    void ToggleCode()
+    {
+        showCode = !showCode;
+    }
+    bool userExecuted = false;
+    private string? InnerCode;
+    private string? UserInnerCode;
+
+    private bool ExecuteButtonDisabled { get => ExecutionId != null; }
+
+    /// <summary>
+    /// Unique id of code execution operation
+    /// </summary>
+    private string? ExecutionId;
+    /// <summary>
+    /// Information about code execution operation
+    /// </summary>
+    private ExecutionInfo? ExecutionInfo;
+    /// <summary>
+    /// Output from ExecutionInfo, split by Environment.NewLine
+    /// </summary>
+    private IEnumerable<string>? OutputSplitByNewLines => ExecutionInfo?.Output.Split(Environment.NewLine);
+
+    private async void ExecuteCode()
+    {
+        if (InnerCode != null && !ExecuteButtonDisabled)
+        {
+            // Sending C# code to server
+            HttpResponseMessage? response = await Http.PostAsJsonAsync("Execution", value: InnerCode);
+            // Getting unique id of code execution operation from server
+            if (response != null && response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                ExecutionId = await response.Content.ReadAsStringAsync();
+                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
+                StateHasChanged();
+                await StatusUpdateLoop();
+            }
+        }
+        
+    }
+
+    private async Task UserExecuteCode()
+    {
+        if (UserInnerCode != null && !ExecuteButtonDisabled)
+        {
+    // Sending C# code to server
+            HttpResponseMessage? userresponse = await Http.PostAsJsonAsync("Execution", value: UserInnerCode);
+    // Getting unique id of code execution operation from server
+            if (userresponse != null && userresponse.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                ExecutionId = await userresponse.Content.ReadAsStringAsync();
+                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
+                StateHasChanged();
+                await StatusUpdateLoop();
+            }
+        }
+    }
+
+    private async Task StatusUpdateLoop()
+    {
+        do
+        {
+            ExecutionInfo = ((ExecutionInfo?)(await Http.GetFromJsonAsync<ExecutionInfo?>("Execution/" + ExecutionId)));
+            StateHasChanged();
+            await Task.Delay(1000);
+        } while (ExecutionInfo != null && (ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.Finished && ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.CompilationError));
+        ExecutionId = null;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,174 @@
+@page "/hashset"
+@using OnlineCompiler.Shared
+@inject HttpClient Http
+@using System.Globalization
+@using Microsoft.AspNetCore.Components
+@inject IStringLocalizer<Localization> Loc
+
+<PageTitle>@Loc["OnlineCsharpCompiler"]</PageTitle>
+
+<div class="container my-5">
+    <div class="text-center">
+        <h2>Хеш-таблица (HashSet)</h2>
+    </div>
+    <p>Класс HashSet предоставляет высокопроизводительные операции набора. Набор — это коллекция, которая не содержит повторяющихся элементов и элементы которой находятся в определенном порядке.</p>
+    
+    <p>Класс HashSet T> основан на модели математических наборов и предоставляет высокопроизводительные операции набора, аналогичные доступу к ключам коллекций Dictionary TKey,TValue> или Hashtable . Проще говоря, HashSet T класс можно рассматривать как коллекцию без значений Dictionary TKey,TValue .</p>
+    <p>Вот визуальное представление внутренней структуры Хеш-таблица:</p>
+    <img src="9.png" alt="Визуальное представление внутренней Хеш-таблица">
+
+    <h3>В классе Stack можно выделить следующие методы:</h3>
+    <ul>
+        <li>Add(T): Добавляет указанный элемент в набор.</li>
+        <li>Clear(): Удаляет все элементы из объекта HashSet</li>
+        <li>Remove(T): Удаляет указанный элемент из объекта HashSet</li>
+        <li>Contains(T): Определяет, содержит ли объект HashSet указанный элемент.</li>
+        <li>CopyTo(T[], Int32, Int32): Копирует указанное количество элементов объекта HashSet в массив, начиная с указанного индекса массива.</li>
+    </ul>
+</div>
+
+@Loc["Description"]
+@if (userExecuted)
+{
+    <br/>
+    <button class="btn btn-warning" @onclick="ToggleCode">@if (showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
+    if (showCode)
+    {
+        <p></p>
+        <CodeEditor @bind-Code="InnerCode">@TemplateHashSet.HashSetCode
+        </CodeEditor>
+        <br/>
+
+        <button class="btn btn-primary @(ExecuteButtonDisabled ? "disabled" : "")" @onclick="ExecuteCode">@Loc["Execute"]</button>
+    }
+}                                                                                                               
+
+    <p></p>
+<p>Пишите свой код тут: </p>
+<CodeEditor @bind-Code="UserInnerCode">@TemplateHashSet.UserHashSetCode
+</CodeEditor>
+<br />
+<button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { userExecuted = true; await UserExecuteCode(); })">@Loc["Execute"]</button>
+
+<br />
+@if (ExecutionInfo != null)
+{
+    <text>&nbsp;</text>
+    switch (ExecutionInfo.Status)
+    {
+        case ExecutionInfo.ExecutionStatus.Preparing:
+            {
+                <status-indicator pulse />
+                <label>@Loc["Preparing"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Compiling:
+            {
+                <status-indicator active />
+                <label>@Loc["Compiling"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.CompilationError:
+            {
+                <status-indicator negative />
+                <label>@Loc["CompilationError"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Running:
+            {
+                <status-indicator active pulse />
+                <label>@Loc["Running"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Finished:
+            {
+                <status-indicator positive />
+                <label>@Loc["Finished"]</label>
+                break;
+            }
+    }
+    <br />
+    if (ExecutionInfo.Output != null && OutputSplitByNewLines != null)
+    {
+        @foreach (string line in OutputSplitByNewLines)
+        {
+            <p>@line</p>
+        }
+        <p>Время: @ExecutionInfo.CompilerTime мс</p>
+    }
+}
+
+@code
+{
+    bool showCode = false;
+
+    void ToggleCode()
+    {
+        showCode = !showCode;
+    }
+    bool userExecuted = false;
+    private string? InnerCode;
+    private string? UserInnerCode;
+
+    private bool ExecuteButtonDisabled { get => ExecutionId != null; }
+
+    /// <summary>
+    /// Unique id of code execution operation
+    /// </summary>
+    private string? ExecutionId;
+    /// <summary>
+    /// Information about code execution operation
+    /// </summary>
+    private ExecutionInfo? ExecutionInfo;
+    /// <summary>
+    /// Output from ExecutionInfo, split by Environment.NewLine
+    /// </summary>
+    private IEnumerable<string>? OutputSplitByNewLines => ExecutionInfo?.Output.Split(Environment.NewLine);
+
+    private async void ExecuteCode()
+    {
+        if (InnerCode != null && !ExecuteButtonDisabled)
+        {
+            // Sending C# code to server
+            HttpResponseMessage? response = await Http.PostAsJsonAsync("Execution", value: InnerCode);
+            // Getting unique id of code execution operation from server
+            if (response != null && response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                ExecutionId = await response.Content.ReadAsStringAsync();
+                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
+                StateHasChanged();
+                await StatusUpdateLoop();
+            }
+        }
+        
+    }
+
+    private async Task UserExecuteCode()
+    {
+        if (UserInnerCode != null && !ExecuteButtonDisabled)
+        {
+    // Sending C# code to server
+            HttpResponseMessage? userresponse = await Http.PostAsJsonAsync("Execution", value: UserInnerCode);
+    // Getting unique id of code execution operation from server
+            if (userresponse != null && userresponse.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                ExecutionId = await userresponse.Content.ReadAsStringAsync();
+                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
+                StateHasChanged();
+                await StatusUpdateLoop();
+            }
+        }
+    }
+
+    private async Task StatusUpdateLoop()
+    {
+        do
+        {
+            ExecutionInfo = ((ExecutionInfo?)(await Http.GetFromJsonAsync<ExecutionInfo?>("Execution/" + ExecutionId)));
+            StateHasChanged();
+            await Task.Delay(1000);
+        } while (ExecutionInfo != null && (ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.Finished && ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.CompilationError));
+        ExecutionId = null;
+        StateHasChanged();
+    }
+}

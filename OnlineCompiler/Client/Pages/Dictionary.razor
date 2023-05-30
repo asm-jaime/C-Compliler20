@@ -1,0 +1,200 @@
+@page "/dictionary"
+@using OnlineCompiler.Shared
+@inject HttpClient Http
+@using System.Globalization
+@using Microsoft.AspNetCore.Components
+@inject IStringLocalizer<Localization> Loc
+
+<PageTitle>@Loc["OnlineCsharpCompiler"]</PageTitle>
+
+<div class="container my-5">
+    <div class="text-center">
+        <h2>Словарь (Dictionary)</h2>
+    </div>
+    <p>Словарь (Dictionary) - это структура данных, которая представляет собой набор пар "ключ-значение". Ключи должны быть уникальными, а значения могут повторяться.</p>
+    <p>Словари используются для хранения и быстрого доступа к данным, которые можно идентифицировать уникальным ключом.</p>
+    <h3>Пример использования словаря</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <p>Создадим словарь с некоторыми данными:</p>
+            <pre>
+                <code>
+                    Dictionary&lt;string, int&gt; myDict = new Dictionary&lt;string, int&gt;()
+                    {
+                        {"apple", 1},
+                        {"banana", 2},
+                        {"cherry", 3}
+                    };
+                </code>
+            </pre>
+            <p>Получим значение по ключу:</p>
+            <pre>
+                            <code>
+                                int value = myDict["banana"];
+                            </code>
+                        </pre>
+            
+        </div>
+        
+    </div>
+    
+    <p>Вот визуальное представление внутренней структуры словар:</p>
+    <img src="6.png" alt="Визуальное представление внутренней структуры словар">
+
+    <h3>Основные операции со словарем</h3>
+    <ul>
+        <li>Add(key, value) - добавление новой пары "ключ-значение" в словарь</li>
+        <li>Remove(key) - удаление пары "ключ-значение" из словаря по ключу</li>
+        <li>ContainsKey(key) - проверка наличия ключа в словаре</li>
+        <li>ContainsValue(value) - проверка наличия значения в словаре</li>
+        <li>TryGetValue(key, out value) - получение значения по ключу. Если ключ не найден, возвращает false.</li>
+        <li>Keys - получение коллекции ключей</li>
+        <li>Values - получение коллекции значений</li>
+    </ul>
+</div>
+
+@Loc["Description"]
+@if (userExecuted)
+{
+    <br/>
+    <button class="btn btn-warning" @onclick="ToggleCode">@if (showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
+    if (showCode)
+    {
+        <p></p>
+        <CodeEditor @bind-Code="InnerCode">@TemplateDictionary.DictionaryCode
+        </CodeEditor>
+        <br/>
+
+        <button class="btn btn-primary @(ExecuteButtonDisabled ? "disabled" : "")" @onclick="ExecuteCode">@Loc["Execute"]</button>
+    }
+}                                                                                                               
+
+    <p></p>
+<p>Пишите свой код тут: </p>
+<CodeEditor @bind-Code="UserInnerCode">@TemplateDictionary.UserDictionaryCode
+</CodeEditor>
+<br />
+<button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { userExecuted = true; await UserExecuteCode(); })">@Loc["Execute"]</button>
+
+<br />
+@if (ExecutionInfo != null)
+{
+    <text>&nbsp;</text>
+    switch (ExecutionInfo.Status)
+    {
+        case ExecutionInfo.ExecutionStatus.Preparing:
+            {
+                <status-indicator pulse />
+                <label>@Loc["Preparing"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Compiling:
+            {
+                <status-indicator active />
+                <label>@Loc["Compiling"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.CompilationError:
+            {
+                <status-indicator negative />
+                <label>@Loc["CompilationError"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Running:
+            {
+                <status-indicator active pulse />
+                <label>@Loc["Running"]</label>
+                break;
+            }
+        case ExecutionInfo.ExecutionStatus.Finished:
+            {
+                <status-indicator positive />
+                <label>@Loc["Finished"]</label>
+                break;
+            }
+    }
+    <br />
+    if (ExecutionInfo.Output != null && OutputSplitByNewLines != null)
+    {
+        @foreach (string line in OutputSplitByNewLines)
+        {
+            <p>@line</p>
+        }
+        <p>Время: @ExecutionInfo.CompilerTime мс</p>
+    }
+}
+
+@code
+{
+    bool showCode = false;
+
+    void ToggleCode()
+    {
+        showCode = !showCode;
+    }
+    bool userExecuted = false;
+    private string? InnerCode;
+    private string? UserInnerCode;
+
+    private bool ExecuteButtonDisabled { get => ExecutionId != null; }
+
+    /// <summary>
+    /// Unique id of code execution operation
+    /// </summary>
+    private string? ExecutionId;
+    /// <summary>
+    /// Information about code execution operation
+    /// </summary>
+    private ExecutionInfo? ExecutionInfo;
+    /// <summary>
+    /// Output from ExecutionInfo, split by Environment.NewLine
+    /// </summary>
+    private IEnumerable<string>? OutputSplitByNewLines => ExecutionInfo?.Output.Split(Environment.NewLine);
+
+    private async void ExecuteCode()
+    {
+        if (InnerCode != null && !ExecuteButtonDisabled)
+        {
+            // Sending C# code to server
+            HttpResponseMessage? response = await Http.PostAsJsonAsync("Execution", value: InnerCode);
+            // Getting unique id of code execution operation from server
+            if (response != null && response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                ExecutionId = await response.Content.ReadAsStringAsync();
+                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
+                StateHasChanged();
+                await StatusUpdateLoop();
+            }
+        }
+        
+    }
+
+    private async Task UserExecuteCode()
+    {
+        if (UserInnerCode != null && !ExecuteButtonDisabled)
+        {
+    // Sending C# code to server
+            HttpResponseMessage? userresponse = await Http.PostAsJsonAsync("Execution", value: UserInnerCode);
+    // Getting unique id of code execution operation from server
+            if (userresponse != null && userresponse.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                ExecutionId = await userresponse.Content.ReadAsStringAsync();
+                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
+                StateHasChanged();
+                await StatusUpdateLoop();
+            }
+        }
+    }
+
+    private async Task StatusUpdateLoop()
+    {
+        do
+        {
+            ExecutionInfo = ((ExecutionInfo?)(await Http.GetFromJsonAsync<ExecutionInfo?>("Execution/" + ExecutionId)));
+            StateHasChanged();
+            await Task.Delay(1000);
+        } while (ExecutionInfo != null && (ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.Finished && ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.CompilationError));
+        ExecutionId = null;
+        StateHasChanged();
+    }
+}

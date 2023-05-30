@@ -1,0 +1,9 @@
+version: '3.4'
+
+services:
+  onlinecompiler.server:
+    image: ${DOCKER_REGISTRY-}onlinecompilerserver
+    build:
+      context: .
+      dockerfile: OnlineCompiler/Server/Dockerfile
+    privileged: true

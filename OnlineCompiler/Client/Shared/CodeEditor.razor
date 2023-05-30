@@ -1,0 +1,64 @@
+﻿@using System.Text
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+
+<div id="@Id" style="position: relative; height: 20rem;" @oninput="OnCodeChanged">@ChildContent</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = "Editor" + Random.Shared.Next();
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string CodeLanguage { get; set; } = "csharp";
+
+    private IJSObjectReference? _editor;
+
+    private string _code = string.Empty;
+
+    /// <summary>
+    /// Code, written in code editor
+    /// </summary>
+    [Parameter]
+    public string Code
+    {
+        get
+        {
+            // Issue #22394 ASP.NET Core (https://github.com/dotnet/aspnetcore/issues/22394)
+            //return editor != null ? await editor.InvokeAsync<string>("session.getValue") : string.Empty;
+            return _code;
+        }
+        set
+        {
+            if (_code != value)
+            {
+                _code = value;
+                _editor?.InvokeVoidAsync("session.setValue", value, 1);
+            }
+        }
+    }
+
+    [Parameter]
+    public EventCallback<string> CodeChanged { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _editor = await JS.InvokeAsync<IJSObjectReference>("ace.edit", Id);
+            await _editor.InvokeVoidAsync("session.setMode", "ace/mode/" + CodeLanguage);
+            StateHasChanged();
+            _code = await _editor.InvokeAsync<string>("session.getValue") ?? string.Empty;
+            await CodeChanged.InvokeAsync((string?)Code);
+        }
+    }
+
+    private async Task OnCodeChanged(ChangeEventArgs e)
+    {
+        // Workaround for #22394
+        _code = _editor != null ? await _editor.InvokeAsync<string>("session.getValue") : string.Empty;
+        await CodeChanged.InvokeAsync((string?)Code);
+    }
+}
