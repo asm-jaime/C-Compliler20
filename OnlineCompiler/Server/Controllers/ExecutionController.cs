@@ -23,6 +23,7 @@ namespace OnlineCompiler.Server.Controllers
         /// <param name="code">C# code</param>
         /// <returns>Unique id of the operation</returns>
         [HttpPost]
+        [Route("Dictionary")]
         public ExecutionInfo Post([FromBody]string? code)
         {
             if (code == null)

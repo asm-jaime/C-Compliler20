@@ -4,7 +4,7 @@
 @using Microsoft.AspNetCore.Components
 @inject IStringLocalizer<Localization> _loc
 
-<PageTitle>@_loc["OnlineCsharpCompiler"]</PageTitle>
+<PageTitle>C#Core2.0</PageTitle>
 
 <div class="container my-5">
     <div class="text-center">
@@ -28,9 +28,9 @@
     </ul>
 </div>
 
-@_loc["Description"]
 @if (_userExecuted)
 {
+    <p>Код разработчиков:</p>
     <br/>
     <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
     if (_showCode)
@@ -39,13 +39,11 @@
         <CodeEditor @bind-Code="_innerCode">@TemplateDictionary.DictionaryCode
         </CodeEditor>
         <br/>
-
-        <button class="btn btn-primary @(ExecuteButtonDisabled ? "disabled" : "")" @onclick="ExecuteCode">@_loc["Execute"]</button>
     }
 }                                                                                                               
 
     <p></p>
-<p>Пишите свой код тут: </p>
+<p>Пишите свой код тут, методы, которые нуждаются в реализации помечены комментарием "Нужна реализация": </p>
 <CodeEditor @bind-Code="_userInnerCode">@TemplateDictionary.UserDictionaryCode</CodeEditor>
 <br />
 <button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { _userExecuted = true; await UserExecuteCode(); })">@_loc["Execute"]</button>
@@ -111,10 +109,7 @@
     private string? _userInnerCode;
 
     private bool ExecuteButtonDisabled = false;
-
-    /// <summary>
-    /// Unique id of code execution operation
-    /// </summary>
+    
     /// <summary>
     /// Information about code execution operation
     /// </summary>
@@ -124,22 +119,16 @@
     /// </summary>
     private IEnumerable<string>? OutputSplitByNewLines => _executionInfo?.Output.Split(Environment.NewLine);
 
-    private async void ExecuteCode()
-    {
-        if (_innerCode != null && !ExecuteButtonDisabled)
-        {
-            HttpResponseMessage? response = await _http.PostAsJsonAsync("Execution", value: _innerCode);
-        }
-        
-    }
-
     private async Task UserExecuteCode()
     {
         if (_userInnerCode != null && !ExecuteButtonDisabled)
         {
-            var userresponse = await _http.PostAsJsonAsync("Execution", value: _userInnerCode);
+            ExecuteButtonDisabled = true;
+            _executionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Running, "");
+            var userresponse = await _http.PostAsJsonAsync("Execution/Dictionary", value: _userInnerCode);
             ExecutionInfo? result = await userresponse.Content.ReadFromJsonAsync<ExecutionInfo>();
             _executionInfo = result;
+            ExecuteButtonDisabled = false;
         }
     }
 }
