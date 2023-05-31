@@ -32,8 +32,11 @@
         }
         set
         {
-            _code = value;
-            _editor?.InvokeVoidAsync("session.setValue", value, 1);
+            if (_code != value)
+            {
+                _code = value;
+                _editor?.InvokeVoidAsync("session.setValue", value, 1);
+            }
         }
     }
 

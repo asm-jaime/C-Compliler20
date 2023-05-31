@@ -97,7 +97,7 @@ namespace OnlineCompiler.Client.Shared {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Законченно.
+        ///   Looks up a localized string similar to Закончено.
         /// </summary>
         public static string Finished {
             get {

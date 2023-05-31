@@ -1,5 +1,6 @@
 ﻿using OnlineCompiler.Shared;
 using Microsoft.AspNetCore.Mvc;
+using OnlineCompiler.Server.Handlers;
 
 namespace OnlineCompiler.Server.Controllers
 {
@@ -37,12 +38,16 @@ namespace OnlineCompiler.Server.Controllers
                     constructedType.GetMethod("Add").Invoke(carInstance, new Object[]{"wtf", "wtf1"});
                 }
             }
-            catch (Exception e)
+            catch (ArgumentException e)
             {
                 return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
             }
+            catch (Exception ex)
+            {
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+            }
             
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, null);
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
 
         /// <summary>

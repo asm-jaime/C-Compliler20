@@ -1,0 +1,5 @@
+
+acsharpsquid:S1104"DMake this field 'private' and encapsulate it in a 'public' property.(ôÏ¯õ
+fcsharpsquid:S1104d"DMake this field 'private' and encapsulate it in a 'public' property.(…‚±Äþÿÿÿÿ
+bcsharpsquid:S2223"EChange the visibility of 'ListCode' or make it 'const' or 'readonly'.(ôÏ¯õ
+kcsharpsquid:S2223d"IChange the visibility of 'UserListCode' or make it 'const' or 'readonly'.(…‚±Äþÿÿÿÿ
