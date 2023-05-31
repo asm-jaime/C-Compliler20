@@ -22,20 +22,27 @@ namespace OnlineCompiler.Server.Controllers
         /// <param name="code">C# code</param>
         /// <returns>Unique id of the operation</returns>
         [HttpPost]
-        public string Post([FromBody]string? code)
+        public ExecutionInfo Post([FromBody]string? code)
         {
             if (code == null)
-                return "0";
-            string guid = Guid.NewGuid().ToString();
-            CodeExecutor ce = new CodeExecutor(code);
-            _codeExecutors.Add(guid, ce);
-            Task.Run(async () =>
+                return null;
+            try
             {
-                await ce.PerformCodeExecutionAsync();
-                await Task.Delay(5000);
-                _codeExecutors.Remove(guid);
-            });
-            return guid;
+                var dicType = DynamicClassCreator.CreateClassFromCode(code, "Dictionary");
+                Type constructedType = dicType.MakeGenericType(typeof(string),typeof(string));
+                if (constructedType != null)
+                {
+                    var carInstance = Activator.CreateInstance(constructedType);
+                    constructedType.GetMethod("Add").Invoke(carInstance, new Object[]{"suka", "suk"});
+                    constructedType.GetMethod("Add").Invoke(carInstance, new Object[]{"wtf", "wtf1"});
+                }
+            }
+            catch (Exception e)
+            {
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+            }
+            
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, null);
         }
 
         /// <summary>
