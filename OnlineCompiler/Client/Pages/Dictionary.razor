@@ -36,14 +36,13 @@
     if (_showCode)
     {
         <p></p>
-        <CodeEditor @bind-Code="_innerCode">@TemplateDictionary.DictionaryCode
-        </CodeEditor>
+        <CodeEditor @bind-Code="_innerCode">@TemplateDictionary.DictionaryCode</CodeEditor>
         <br/>
     }
 }                                                                                                               
 
     <p></p>
-<p>Пишите свой код тут, методы, которые нуждаются в реализации помечены комментарием "Нужна реализация": </p>
+<p>Пишите свой тут, методы, которые нуждаются в реализации помечены комментарием "Нужна реализация": </p>
 <CodeEditor @bind-Code="_userInnerCode">@TemplateDictionary.UserDictionaryCode</CodeEditor>
 <br />
 <button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { _userExecuted = true; await UserExecuteCode(); })">@_loc["Execute"]</button>
@@ -132,3 +131,4 @@
         }
     }
 }
+

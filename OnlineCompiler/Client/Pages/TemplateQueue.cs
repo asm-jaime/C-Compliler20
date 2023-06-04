@@ -2,15 +2,9 @@ namespace OnlineCompiler.Client.Pages;
 
 public static class TemplateQueue
 {
-    public static string QueueCode = @"
+    public static string QueueCode = @"using System;
 using System.Collections;
-var people = new Queue<string>();
-people.Enqueue(""Tom"");  // people = { Tom }
-people.Enqueue(""Bob"");  // people = { Tom, Bob }
-people.Enqueue(""Sam"");  // people = { Tom, Bob, Sam }
-            
-var firstPerson = people.Peek();
-Console.WriteLine(firstPerson); // Tom
+using System.Collections.Generic;
 
 public class Queue<T> : IEnumerable<T>, ICollection, IEnumerable
 {
@@ -32,10 +26,10 @@ public class Queue<T> : IEnumerable<T>, ICollection, IEnumerable
         _version = 0;
     }
 
-    public Queue(int capacity) 
+    public Queue(int capacity)
     {
         if (capacity < 0)
-            throw new ArgumentOutOfRangeException(nameof(capacity), ""Capacity cannot be negative."");
+            throw new ArgumentOutOfRangeException(nameof(capacity));
 
         _array = new T[capacity];
         _head = 0;
@@ -63,10 +57,10 @@ public class Queue<T> : IEnumerable<T>, ICollection, IEnumerable
             throw new ArgumentNullException(nameof(array));
 
         if (index < 0 || index > array.Length)
-            throw new ArgumentOutOfRangeException(nameof(index), ""Index was out of range. Must be non-negative and less than the size of the collection."");
+            throw new ArgumentOutOfRangeException(nameof(index));
 
         if (array.Length - index < _size)
-            throw new ArgumentException(""The number of elements in the source collection is greater than the available space from arrayIndex to the end of the destination array."");
+            throw new ArgumentException();
 
         int numToCopy = _size;
         if (numToCopy == 0)
@@ -78,7 +72,6 @@ public class Queue<T> : IEnumerable<T>, ICollection, IEnumerable
         numToCopy -= firstPart;
         if (numToCopy > 0)
             Array.Copy(_array, 0, array, index + _array.Length - _head, numToCopy);
-            
     }
 
     public int Count => _size;
@@ -89,7 +82,6 @@ public class Queue<T> : IEnumerable<T>, ICollection, IEnumerable
 
     public void Enqueue(T item)
     {
-                
         if (_size == _array.Length)
         {
             int newCapacity = _array.Length == 0 ? DefaultCapacity : _array.Length * 2;
@@ -126,10 +118,10 @@ public class Queue<T> : IEnumerable<T>, ICollection, IEnumerable
     public T Dequeue()
     {
         if (_size == 0)
-            throw new InvalidOperationException(""Queue is empty."");
+            throw new InvalidOperationException();
 
         T removed = _array[_head];
-        _array[_head] = default!;
+        _array[_head] = default(T)!;
         _head = (_head + 1) % _array.Length;
         _size--;
         _version++;
@@ -140,7 +132,7 @@ public class Queue<T> : IEnumerable<T>, ICollection, IEnumerable
     public T Peek()
     {
         if (_size == 0)
-            throw new InvalidOperationException(""Queue is empty."");
+            throw new InvalidOperationException();
 
         return _array[_head];
     }
@@ -208,7 +200,8 @@ public class Queue<T> : IEnumerable<T>, ICollection, IEnumerable
     {
         return GetEnumerator();
     }
-}";
+}
+ ";
 
     public static string UserQueueCode = @"
 using System.Collections;

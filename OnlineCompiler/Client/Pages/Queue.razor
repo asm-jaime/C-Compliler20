@@ -1,11 +1,10 @@
 @page "/queue"
 @using OnlineCompiler.Shared
-@inject HttpClient Http
-@using System.Globalization
+@inject HttpClient _http
 @using Microsoft.AspNetCore.Components
-@inject IStringLocalizer<Localization> Loc
+@inject IStringLocalizer<Localization> _loc
 
-<PageTitle>@Loc["OnlineCsharpCompiler"]</PageTitle>
+<PageTitle>@_loc["OnlineCsharpCompiler"]</PageTitle>
 
 <div class="container my-5">
     <div class="text-center">
@@ -28,148 +27,108 @@
     </ul>
 </div>
 
-@Loc["Description"]
-@if (userExecuted)
+
+@if (_userExecuted)
 {
     <br/>
-    <button class="btn btn-warning" @onclick="ToggleCode">@if (showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
-    if (showCode)
+    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
+    if (_showCode)
     {
         <p></p>
-        <CodeEditor @bind-Code="InnerCode">@TemplateQueue.QueueCode
+        <CodeEditor @bind-Code="_innerCode">@TemplateQueue.QueueCode
         </CodeEditor>
         <br/>
 
-        <button class="btn btn-primary @(ExecuteButtonDisabled ? "disabled" : "")" @onclick="ExecuteCode">@Loc["Execute"]</button>
-    }
+        }
 }                                                                                                               
 
     <p></p>
 <p>Пишите свой код тут: </p>
-<CodeEditor @bind-Code="UserInnerCode">@TemplateQueue.UserQueueCode
-</CodeEditor>
+<CodeEditor @bind-Code="_userInnerCode">@TemplateQueue.UserQueueCode</CodeEditor>
 <br />
-<button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { userExecuted = true; await UserExecuteCode(); })">@Loc["Execute"]</button>
+<button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { _userExecuted = true; await UserExecuteCode(); })">@_loc["Execute"]</button>
 
 <br />
-@if (ExecutionInfo != null)
+@if (_executionInfo != null)
 {
     <text>&nbsp;</text>
-    switch (ExecutionInfo.Status)
+    switch (_executionInfo.Status)
     {
         case ExecutionInfo.ExecutionStatus.Preparing:
             {
                 <status-indicator pulse />
-                <label>@Loc["Preparing"]</label>
+                <label>@_loc["Preparing"]</label>
                 break;
             }
         case ExecutionInfo.ExecutionStatus.Compiling:
             {
                 <status-indicator active />
-                <label>@Loc["Compiling"]</label>
+                <label>@_loc["Compiling"]</label>
                 break;
             }
         case ExecutionInfo.ExecutionStatus.CompilationError:
             {
                 <status-indicator negative />
-                <label>@Loc["CompilationError"]</label>
+                <label>@_loc["CompilationError"]</label>
                 break;
             }
         case ExecutionInfo.ExecutionStatus.Running:
             {
                 <status-indicator active pulse />
-                <label>@Loc["Running"]</label>
+                <label>@_loc["Running"]</label>
                 break;
             }
         case ExecutionInfo.ExecutionStatus.Finished:
             {
                 <status-indicator positive />
-                <label>@Loc["Finished"]</label>
+                <label>@_loc["Finished"]</label>
                 break;
             }
     }
     <br />
-    if (ExecutionInfo.Output != null && OutputSplitByNewLines != null)
+    if (OutputSplitByNewLines != null)
     {
         @foreach (string line in OutputSplitByNewLines)
         {
             <p>@line</p>
         }
-        <p>Время: @ExecutionInfo.CompilerTime мс</p>
+        <p>Время: @_executionInfo.CompilerTime мс</p>
     }
 }
 
 @code
 {
-    bool showCode = false;
+    bool _showCode;
 
     void ToggleCode()
     {
-        showCode = !showCode;
+        _showCode = !_showCode;
     }
-    bool userExecuted = false;
-    private string? InnerCode;
-    private string? UserInnerCode;
+    bool _userExecuted;
+    private string? _innerCode;
+    private string? _userInnerCode;
 
-    private bool ExecuteButtonDisabled { get => ExecutionId != null; }
-
-    /// <summary>
-    /// Unique id of code execution operation
-    /// </summary>
-    private string? ExecutionId;
+    private bool ExecuteButtonDisabled = false;
+    
     /// <summary>
     /// Information about code execution operation
     /// </summary>
-    private ExecutionInfo? ExecutionInfo;
+    private ExecutionInfo? _executionInfo;
     /// <summary>
     /// Output from ExecutionInfo, split by Environment.NewLine
     /// </summary>
-    private IEnumerable<string>? OutputSplitByNewLines => ExecutionInfo?.Output.Split(Environment.NewLine);
-
-    private async void ExecuteCode()
-    {
-        if (InnerCode != null && !ExecuteButtonDisabled)
-        {
-            // Sending C# code to server
-            HttpResponseMessage? response = await Http.PostAsJsonAsync("Execution", value: InnerCode);
-            // Getting unique id of code execution operation from server
-            if (response != null && response.StatusCode == System.Net.HttpStatusCode.OK)
-            {
-                ExecutionId = await response.Content.ReadAsStringAsync();
-                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
-                StateHasChanged();
-                await StatusUpdateLoop();
-            }
-        }
-        
-    }
+    private IEnumerable<string>? OutputSplitByNewLines => _executionInfo?.Output.Split(Environment.NewLine);
 
     private async Task UserExecuteCode()
     {
-        if (UserInnerCode != null && !ExecuteButtonDisabled)
+        if (_userInnerCode != null && !ExecuteButtonDisabled)
         {
-    // Sending C# code to server
-            HttpResponseMessage? userresponse = await Http.PostAsJsonAsync("Execution", value: UserInnerCode);
-    // Getting unique id of code execution operation from server
-            if (userresponse != null && userresponse.StatusCode == System.Net.HttpStatusCode.OK)
-            {
-                ExecutionId = await userresponse.Content.ReadAsStringAsync();
-                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
-                StateHasChanged();
-                await StatusUpdateLoop();
-            }
+            ExecuteButtonDisabled = true;
+            _executionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Running, "");
+            var userresponse = await _http.PostAsJsonAsync("Execution/Queue", value: _userInnerCode);
+            ExecutionInfo? result = await userresponse.Content.ReadFromJsonAsync<ExecutionInfo>();
+            _executionInfo = result;
+            ExecuteButtonDisabled = false;
         }
-    }
-
-    private async Task StatusUpdateLoop()
-    {
-        do
-        {
-            ExecutionInfo = ((ExecutionInfo?)(await Http.GetFromJsonAsync<ExecutionInfo?>("Execution/" + ExecutionId)));
-            StateHasChanged();
-            await Task.Delay(1000);
-        } while (ExecutionInfo != null && (ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.Finished && ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.CompilationError));
-        ExecutionId = null;
-        StateHasChanged();
     }
 }

@@ -1,4 +1,4 @@
-@page "/hashset"
+@page "/observablecollection"
 @using OnlineCompiler.Shared
 @inject HttpClient _http
 @using Microsoft.AspNetCore.Components
@@ -8,21 +8,33 @@
 
 <div class="container my-5">
     <div class="text-center">
-        <h2>Хеш-таблица (HashSet)</h2>
+        <h2>Наблюдаемая коллекция (ObservableCollection)</h2>
     </div>
-    <p>Класс HashSet предоставляет высокопроизводительные операции набора. Набор — это коллекция, которая не содержит повторяющихся элементов и элементы которой находятся в определенном порядке.</p>
-    
-    <p>Класс HashSet T> основан на модели математических наборов и предоставляет высокопроизводительные операции набора, аналогичные доступу к ключам коллекций Dictionary TKey,TValue> или Hashtable . Проще говоря, HashSet T класс можно рассматривать как коллекцию без значений Dictionary TKey,TValue .</p>
-    <p>Вот визуальное представление внутренней структуры Хеш-таблица:</p>
-    <img src="9.png" alt="Визуальное представление внутренней Хеш-таблица">
+    <p>Класс ObservableCollection представляет коллекцию, которая предоставляет уведомления о изменениях, происходящих в коллекции. Когда элементы в коллекции добавляются, удаляются или изменяются, ObservableCollection автоматически генерирует события, позволяя подписчикам реагировать на эти изменения.
+    </p>
+    <p>ObservableCollection является полезным классом в сценариях, где требуется отслеживание изменений коллекции и обновление пользовательского интерфейса или выполнение дополнительных действий при изменениях.
+    </p>
+    <h3>Пример использования наблюдаемой коллекции</h3>
 
-    <h3>В классе Stack можно выделить следующие методы:</h3>
+    <p>Вот пример использования наблюдаемой коллекции:</p>
+    <pre>
+        <code>
+            ObservableCollection&lt;string&gt; collection = new ObservableCollection&lt;string&gt;();
+            collection.CollectionChanged += CollectionChangedEventHandler;
+            
+            void CollectionChangedEventHandler(object sender, NotifyCollectionChangedEventArgs e)
+            {
+                // Обработка изменений в коллекции
+            }
+        </code>
+    </pre>
+
+    <h3>В классе ObservableCollection можно выделить следующие методы:</h3>
     <ul>
-        <li>Add(T): Добавляет указанный элемент в набор.</li>
-        <li>Clear(): Удаляет все элементы из объекта HashSet</li>
-        <li>Remove(T): Удаляет указанный элемент из объекта HashSet</li>
-        <li>Contains(T): Определяет, содержит ли объект HashSet указанный элемент.</li>
-        <li>CopyTo(T[], Int32, Int32): Копирует указанное количество элементов объекта HashSet в массив, начиная с указанного индекса массива.</li>
+        <li>Add: добавляет элемент в коллекцию</li>
+        <li>Remove: удаляет элемент из коллекции</li>
+        <li>Clear: очищает коллекцию</li>
+        <li>Insert: вставляет элемент в заданную позицию коллекции</li>
     </ul>
 </div>
 
@@ -33,17 +45,16 @@
     if (_showCode)
     {
         <p></p>
-        <CodeEditor @bind-Code="_innerCode">@TemplateHashSet.HashSetCode
+        <CodeEditor @bind-Code="_innerCode">@TemplateObservableCollection.ObservableCollectionCode
         </CodeEditor>
         <br/>
 
-    }
+        }
 }                                                                                                               
 
-    <p></p>
+<p></p>
 <p>Пишите свой код тут: </p>
-<CodeEditor @bind-Code="_userInnerCode">@TemplateHashSet.UserHashSetCode
-</CodeEditor>
+<CodeEditor @bind-Code="_userInnerCode">@TemplateObservableCollection.UserObservableCollectionCode</CodeEditor>
 <br />
 <button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { _userExecuted = true; await UserExecuteCode(); })">@_loc["Execute"]</button>
 
@@ -125,7 +136,7 @@
         {
             ExecuteButtonDisabled = true;
             _executionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Running, "");
-            var userresponse = await _http.PostAsJsonAsync("Execution/HashSet", value: _userInnerCode);
+            var userresponse = await _http.PostAsJsonAsync("Execution/ObservableCollection", value: _userInnerCode);
             ExecutionInfo? result = await userresponse.Content.ReadFromJsonAsync<ExecutionInfo>();
             _executionInfo = result;
             ExecuteButtonDisabled = false;

@@ -1,4 +1,4 @@
-@page "/hashset"
+@page "/linkedlist"
 @using OnlineCompiler.Shared
 @inject HttpClient _http
 @using Microsoft.AspNetCore.Components
@@ -8,21 +8,25 @@
 
 <div class="container my-5">
     <div class="text-center">
-        <h2>Хеш-таблица (HashSet)</h2>
+        <h2>Связанный список (LinkedList)</h2>
     </div>
-    <p>Класс HashSet предоставляет высокопроизводительные операции набора. Набор — это коллекция, которая не содержит повторяющихся элементов и элементы которой находятся в определенном порядке.</p>
-    
-    <p>Класс HashSet T> основан на модели математических наборов и предоставляет высокопроизводительные операции набора, аналогичные доступу к ключам коллекций Dictionary TKey,TValue> или Hashtable . Проще говоря, HashSet T класс можно рассматривать как коллекцию без значений Dictionary TKey,TValue .</p>
-    <p>Вот визуальное представление внутренней структуры Хеш-таблица:</p>
-    <img src="9.png" alt="Визуальное представление внутренней Хеш-таблица">
+    <p>Класс LinkedList представляет связанный список, который является одной из структур данных. В связанном списке каждый элемент содержит ссылку на следующий элемент. Извлечение элементов происходит путем перехода по ссылкам от одного элемента к другому.
+    </p>
+    <p>Связанный список является гибкой структурой данных, так как он позволяет добавлять, удалять и изменять элементы без необходимости перемещения всех элементов. Это отличает его от массива, где элементы хранятся в смежных ячейках памяти.
+    </p>
+    <h3>Пример использования связанного списка</h3>
 
-    <h3>В классе Stack можно выделить следующие методы:</h3>
+    <p>Вот визуальное представление внутренней структуры Связанного списка:</p>
+    <img src="linkedlist.png" alt="Визуальное представление внутренней структуры связанного списка">
+
+    <h3>В классе LinkedList можно выделить следующие методы:</h3>
     <ul>
-        <li>Add(T): Добавляет указанный элемент в набор.</li>
-        <li>Clear(): Удаляет все элементы из объекта HashSet</li>
-        <li>Remove(T): Удаляет указанный элемент из объекта HashSet</li>
-        <li>Contains(T): Определяет, содержит ли объект HashSet указанный элемент.</li>
-        <li>CopyTo(T[], Int32, Int32): Копирует указанное количество элементов объекта HashSet в массив, начиная с указанного индекса массива.</li>
+        <li>AddFirst: добавляет элемент в начало списка</li>
+        <li>AddLast: добавляет элемент в конец списка</li>
+        <li>RemoveFirst: удаляет первый элемент из списка</li>
+        <li>RemoveLast: удаляет последний элемент из списка</li>
+        <li>Contains: проверяет наличие элемента в списке и возвращает true при его наличии</li>
+        <li>Find: ищет элемент в списке и возвращает его</li>
     </ul>
 </div>
 
@@ -33,17 +37,16 @@
     if (_showCode)
     {
         <p></p>
-        <CodeEditor @bind-Code="_innerCode">@TemplateHashSet.HashSetCode
+        <CodeEditor @bind-Code="_innerCode">@TemplateLinkedList.LinkedListCode
         </CodeEditor>
         <br/>
 
-    }
+        }
 }                                                                                                               
 
-    <p></p>
+<p></p>
 <p>Пишите свой код тут: </p>
-<CodeEditor @bind-Code="_userInnerCode">@TemplateHashSet.UserHashSetCode
-</CodeEditor>
+<CodeEditor @bind-Code="_userInnerCode">@TemplateLinkedList.UserLinkedListCode</CodeEditor>
 <br />
 <button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { _userExecuted = true; await UserExecuteCode(); })">@_loc["Execute"]</button>
 
@@ -125,7 +128,7 @@
         {
             ExecuteButtonDisabled = true;
             _executionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Running, "");
-            var userresponse = await _http.PostAsJsonAsync("Execution/HashSet", value: _userInnerCode);
+            var userresponse = await _http.PostAsJsonAsync("Execution/LinkedList", value: _userInnerCode);
             ExecutionInfo? result = await userresponse.Content.ReadFromJsonAsync<ExecutionInfo>();
             _executionInfo = result;
             ExecuteButtonDisabled = false;

@@ -2,20 +2,9 @@ namespace OnlineCompiler.Client.Pages;
 
 public static class TemplateHashSet
 {
-    public static string HashSetCode=@"
+    public static string HashSetCode=@"using System;
 using System.Collections;
-HashSet<string> cities = new HashSet<string>
-{
-    ""Mumbai"",
-    ""Vadodra"",
-    ""Surat"",
-    ""Ahmedabad""
-};
-
-foreach (var city in cities)
-{
-    Console.WriteLine(city);
-}
+using System.Collections.Generic;
 
 public class HashSet<T> : ICollection<T>, IEnumerable<T>, ICollection, IEnumerable
 {
