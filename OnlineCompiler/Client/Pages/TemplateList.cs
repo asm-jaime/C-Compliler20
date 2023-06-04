@@ -3,99 +3,102 @@ namespace OnlineCompiler.Client.Pages;
 public static class TemplateList
 {
     public static string ListCode = @"
-    using System.Collections;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 
-    var people = new List<string>() { ""Tom"", ""Bob"", ""Sam"" };
-               
-    foreach (var person in people)
+class List<T> : IEnumerable<T>
+{
+    private T[] items;
+    private int count;
+
+    public List()
     {
-        Console.WriteLine(person);
+        items = new T[4];
+        count = 0;
     }
-    class List<T>:IEnumerable<T>
+
+    public void Add(T item)
     {
-        private T[] items;
-        private int count;
-
-        public List()
+        if (count == items.Length)
         {
-            items = new T[4];
-            count = 0;
+            Array.Resize(ref items, items.Length * 2);
         }
+        items[count++] = item;
+    }
 
-        public void Add(T item)
+    public void AddRange(IEnumerable<T> collection)
+    {
+        foreach (var item in collection)
         {
-            if (count == items.Length)
+            Add(item);
+        }
+    }
+
+    public bool Contains(T item)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            if (EqualityComparer<T>.Default.Equals(items[i], item))
             {
-                Array.Resize(ref items, items.Length * 2);
-            }
-            items[count++] = item;
-        }
-
-        public void AddRange(IEnumerable<T> collection)
-        {
-            foreach (var item in collection)
-            {
-                Add(item);
-            }
-        }
-
-        public bool Contains(T item)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                if (items[i].Equals(item))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public int Count
-        {
-            get { return count; }
-        }
-
-        public T this[int index]
-        {
-            get { return items[index]; }
-            set { items[index] = value; }
-        }
-
-        public void Clear()
-        {
-            Array.Clear(items, 0, count);
-            count = 0;
-        }
-
-        public bool Remove(T item)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                if (items[i].Equals(item))
-                {
-                    // Shift remaining items left
-                    Array.Copy(items, i + 1, items, i, count - i - 1);
-                    count--;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            for (int i = 0; i < count; i++)
-            {
-                yield return items[i];
+                return true;
             }
         }
+        return false;
+    }
 
-        IEnumerator IEnumerable.GetEnumerator()
+    public int Count
+    {
+        get { return count; }
+    }
+
+    public T this[int index]
+    {
+        get
         {
-            return GetEnumerator();
+            if (index < 0 || index >= count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+            return items[index];
         }
-    }";
+    }
+
+    public void Clear()
+    {
+        Array.Clear(items, 0, count);
+        count = 0;
+    }
+
+    public bool Remove(T item)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            if (EqualityComparer<T>.Default.Equals(items[i], item))
+            {
+                Array.Copy(items, i + 1, items, i, count - i - 1);
+                count--;
+                items[count] = default(T);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        for (int i = 0; i < count; i++)
+        {
+            yield return items[i];
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+} 
+ ";
     
     public static string UserListCode = @"
     using System.Collections;

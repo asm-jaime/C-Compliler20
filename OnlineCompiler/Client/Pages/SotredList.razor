@@ -1,4 +1,4 @@
-@page "/hashset"
+@page "/sortedlist"
 @using OnlineCompiler.Shared
 @inject HttpClient _http
 @using Microsoft.AspNetCore.Components
@@ -8,21 +8,40 @@
 
 <div class="container my-5">
     <div class="text-center">
-        <h2>Хеш-таблица (HashSet)</h2>
+        <h2>Отсортированный список (SortedList)</h2>
     </div>
-    <p>Класс HashSet предоставляет высокопроизводительные операции набора. Набор — это коллекция, которая не содержит повторяющихся элементов и элементы которой находятся в определенном порядке.</p>
-    
-    <p>Класс HashSet T> основан на модели математических наборов и предоставляет высокопроизводительные операции набора, аналогичные доступу к ключам коллекций Dictionary TKey,TValue> или Hashtable . Проще говоря, HashSet T класс можно рассматривать как коллекцию без значений Dictionary TKey,TValue .</p>
-    <p>Вот визуальное представление внутренней структуры Хеш-таблица:</p>
-    <img src="9.png" alt="Визуальное представление внутренней Хеш-таблица">
+    <p>Класс SortedList представляет коллекцию пар "ключ-значение", которая автоматически сортирует элементы по ключу в порядке возрастания. Когда элементы добавляются или удаляются из списка, SortedList автоматически пересортирует коллекцию, чтобы сохранить порядок сортировки.
+    </p>
+    <p>SortedList является полезным классом в сценариях, где требуется хранение пар "ключ-значение" с автоматической сортировкой по ключу.
+    </p>
+    <h3>Пример использования отсортированного списка</h3>
 
-    <h3>В классе Stack можно выделить следующие методы:</h3>
+    <p>Вот пример использования отсортированного списка:</p>
+    <pre>
+        <code>
+            SortedList&lt;int, string&gt; sortedList = new SortedList&lt;int, string&gt;();
+            sortedList.Add(3, "значение3");
+            sortedList.Add(1, "значение1");
+            sortedList.Add(2, "значение2");
+            
+            foreach (var item in sortedList)
+            {
+                Console.WriteLine($"Ключ: {item.Key}, Значение: {item.Value}");
+            }
+            // Вывод:
+            // Ключ: 1, Значение: значение1
+            // Ключ: 2, Значение: значение2
+            // Ключ: 3, Значение: значение3
+        </code>
+    </pre>
+
+    <h3>В классе SortedList можно выделить следующие методы:</h3>
     <ul>
-        <li>Add(T): Добавляет указанный элемент в набор.</li>
-        <li>Clear(): Удаляет все элементы из объекта HashSet</li>
-        <li>Remove(T): Удаляет указанный элемент из объекта HashSet</li>
-        <li>Contains(T): Определяет, содержит ли объект HashSet указанный элемент.</li>
-        <li>CopyTo(T[], Int32, Int32): Копирует указанное количество элементов объекта HashSet в массив, начиная с указанного индекса массива.</li>
+        <li>Add: добавляет элемент с указанным ключом и значением в список</li>
+        <li>Remove: удаляет элемент с указанным ключом из списка</li>
+        <li>Clear: очищает список</li>
+        <li>ContainsKey: проверяет наличие элемента с указанным ключом в списке</li>
+        <li>ContainsValue: проверяет наличие элемента с указанным значением в списке</li>
     </ul>
 </div>
 
@@ -33,17 +52,16 @@
     if (_showCode)
     {
         <p></p>
-        <CodeEditor @bind-Code="_innerCode">@TemplateHashSet.HashSetCode
+        <CodeEditor @bind-Code="_innerCode">@TemplateSortedList.SortedListCode
         </CodeEditor>
         <br/>
 
-    }
+        }
 }                                                                                                               
 
-    <p></p>
+<p></p>
 <p>Пишите свой код тут: </p>
-<CodeEditor @bind-Code="_userInnerCode">@TemplateHashSet.UserHashSetCode
-</CodeEditor>
+<CodeEditor @bind-Code="_userInnerCode">@TemplateSortedList.UserSortedListCode</CodeEditor>
 <br />
 <button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { _userExecuted = true; await UserExecuteCode(); })">@_loc["Execute"]</button>
 
@@ -125,7 +143,7 @@
         {
             ExecuteButtonDisabled = true;
             _executionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Running, "");
-            var userresponse = await _http.PostAsJsonAsync("Execution/HashSet", value: _userInnerCode);
+            var userresponse = await _http.PostAsJsonAsync("Execution/SortedList", value: _userInnerCode);
             ExecutionInfo? result = await userresponse.Content.ReadFromJsonAsync<ExecutionInfo>();
             _executionInfo = result;
             ExecuteButtonDisabled = false;

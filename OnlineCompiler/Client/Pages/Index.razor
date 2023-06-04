@@ -1,21 +1,21 @@
 ﻿@page "/"
 @using OnlineCompiler.Shared
-@inject HttpClient Http
-@using System.Globalization
-@inject IStringLocalizer<Localization> Loc
+@inject HttpClient _http
+@using Microsoft.AspNetCore.Components
+@inject IStringLocalizer<Localization> _loc
 
-<PageTitle>@Loc["OnlineCsharpCompiler"]</PageTitle>
+<PageTitle>@_loc["OnlineCsharpCompiler"]</PageTitle>
 
-<h1>@Loc["OnlineCsharpCompiler"]</h1>
+<h1>@_loc["OnlineCsharpCompiler"]</h1>
 
-@Loc["Description"]
+@_loc["Description"]
 
 <CodeEditor @bind-Code="InnerCode">Console.WriteLine("Hello world");
 </CodeEditor>
 
 <br />
 
-<button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="ExecuteCode">@Loc["Execute"]</button>
+<button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="ExecuteCode">@_loc["Execute"]</button>
 
 @if (ExecutionInfo != null)
 {
@@ -25,31 +25,31 @@
         case ExecutionInfo.ExecutionStatus.Preparing:
             {
                 <status-indicator pulse />
-                <label>@Loc["Preparing"]</label>
+                <label>@_loc["Preparing"]</label>
                 break;
             }
         case ExecutionInfo.ExecutionStatus.Compiling:
             {
                 <status-indicator active />
-                <label>@Loc["Compiling"]</label>
+                <label>@_loc["Compiling"]</label>
                 break;
             }
         case ExecutionInfo.ExecutionStatus.CompilationError:
             {
                 <status-indicator negative />
-                <label>@Loc["CompilationError"]</label>
+                <label>@_loc["CompilationError"]</label>
                 break;
             }
         case ExecutionInfo.ExecutionStatus.Running:
             {
                 <status-indicator active pulse />
-                <label>@Loc["Running"]</label>
+                <label>@_loc["Running"]</label>
                 break;
             }
         case ExecutionInfo.ExecutionStatus.Finished:
             {
                 <status-indicator positive />
-                <label>@Loc["Finished"]</label>
+                <label>@_loc["Finished"]</label>
                 break;
             }
     }
@@ -88,7 +88,7 @@
         if (InnerCode != null && !ExecuteButtonDisabled)
         {
             // Sending C# code to server
-            HttpResponseMessage? response = await Http.PostAsJsonAsync("Execution", InnerCode);
+            HttpResponseMessage? response = await _http.PostAsJsonAsync("Execution", InnerCode);
             // Getting unique id of code execution operation from server
             if (response != null && response.StatusCode == System.Net.HttpStatusCode.OK)
             {
@@ -104,7 +104,7 @@
     {
         do
         {
-            ExecutionInfo = ((ExecutionInfo?)(await Http.GetFromJsonAsync<ExecutionInfo?>("Execution/" + ExecutionId)));
+            ExecutionInfo = ((ExecutionInfo?)(await _http.GetFromJsonAsync<ExecutionInfo?>("Execution/" + ExecutionId)));
             StateHasChanged();
             await Task.Delay(1000);
         } while (ExecutionInfo != null && (ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.Finished && ExecutionInfo.Status != ExecutionInfo.ExecutionStatus.CompilationError));
