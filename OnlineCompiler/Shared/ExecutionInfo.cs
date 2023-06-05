@@ -20,7 +20,8 @@ namespace OnlineCompiler.Shared
         public ExecutionStatus Status { get; set; }
         public string Output { get; set; }
         public long CompilerTime { get; set; }
-
+        public int ErrorLineNumber { get; set; } // новое свойство
+        
         /// <summary>
         /// Конструктор для десериализации
         /// </summary>
@@ -38,6 +39,13 @@ namespace OnlineCompiler.Shared
             this.Status = resultStatus;
             this.CompilerTime = CompilerTime;
             this.Output = Output;
+        }
+        public ExecutionInfo(ExecutionStatus resultStatus, long compilerTime, int errorLineNumber, string output = "")
+        {
+            this.Status = resultStatus;
+            this.CompilerTime = compilerTime;
+            this.Output = output;
+            this.ErrorLineNumber = errorLineNumber;
         }
     }
 }
