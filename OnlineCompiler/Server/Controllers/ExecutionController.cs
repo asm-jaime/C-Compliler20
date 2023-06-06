@@ -9,7 +9,7 @@ namespace OnlineCompiler.Server.Controllers
     public class ExecutionController : ControllerBase
     {
         private static Dictionary<string, CodeExecutor> _codeExecutors = new Dictionary<string, CodeExecutor>();
-        
+
         private readonly ILogger<ExecutionController> _logger;
 
         public ExecutionController(ILogger<ExecutionController> logger)
@@ -24,14 +24,14 @@ namespace OnlineCompiler.Server.Controllers
         /// <returns>Unique id of the operation</returns>
         [HttpPost]
         [Route("Dictionary")]
-        public ExecutionInfo Post([FromBody]string? code)
+        public ExecutionInfo Post([FromBody] string? code)
         {
             if (code == null)
                 return null;
             try
             {
                 var dicType = DynamicClassCreator.CreateClassFromCode(code, "Dictionary");
-                Type constructedType = dicType.MakeGenericType(typeof(string),typeof(string));
+                Type constructedType = dicType.MakeGenericType(typeof(string), typeof(string));
                 if (constructedType == null)
                 {
                     throw new Exception("Error");
@@ -49,15 +49,16 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                    $"Произошла ошибка при запуске: {ex}");
             }
-            
+
             return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
-        
+
         [HttpPost]
         [Route("HashSet")]
-        public ExecutionInfo PostHashSet([FromBody]string? code)
+        public ExecutionInfo PostHashSet([FromBody] string? code)
         {
             if (code == null)
             {
@@ -72,19 +73,21 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     throw new Exception("Error");
                 }
-                // if (constructedType != null)
-                // {
-                //     var setInstance = Activator.CreateInstance(constructedType);
-                //     constructedType.GetMethod("Add").Invoke(setInstance, new Object[]{"firstElement"});
-                //     constructedType.GetMethod("Add").Invoke(setInstance, new Object[]{"firstElement"});
-                //     // В HashSet допустимы только уникальные элементы, 
-                //     // поэтому, несмотря на два вызова Add с "firstElement", 
-                //     // размер HashSet должен быть равен 1.
-                //     if ((int)constructedType.GetProperty("Count").GetValue(setInstance) != 1)
-                //     {
-                //         throw new Exception($"Ошибка: ожидался размер 1, но получен размер {constructedType.GetProperty("Count").GetValue(setInstance)}");
-                //     }
-                // }
+
+                if (constructedType != null)
+                {
+                    var setInstance = Activator.CreateInstance(constructedType);
+                    constructedType.GetMethod("Add").Invoke(setInstance, new Object[] { "firstElement" });
+                    constructedType.GetMethod("Add").Invoke(setInstance, new Object[] { "firstElement" });
+                    // В HashSet допустимы только уникальные элементы, 
+                    // поэтому, несмотря на два вызова Add с "firstElement", 
+                    // размер HashSet должен быть равен 1.
+                    if ((int)constructedType.GetProperty("Count").GetValue(setInstance) != 1)
+                    {
+                        throw new Exception(
+                            $"Ошибка: ожидался размер 1, но получен размер {constructedType.GetProperty("Count").GetValue(setInstance)}");
+                    }
+                }
             }
             catch (ArgumentException e)
             {
@@ -92,16 +95,17 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                    $"Произошла ошибка при запуске: {ex}");
             }
-            
+
             return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
 
 
         [HttpPost]
         [Route("List")]
-        public ExecutionInfo PostList([FromBody]string? code)
+        public ExecutionInfo PostList([FromBody] string? code)
         {
             if (code == null)
             {
@@ -129,16 +133,17 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                    $"Произошла ошибка при запуске: {ex}");
             }
-            
+
             return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
 
 
         [HttpPost]
         [Route("Queue")]
-        public ExecutionInfo PostQueue([FromBody]string? code)
+        public ExecutionInfo PostQueue([FromBody] string? code)
         {
             if (code == null)
             {
@@ -158,7 +163,7 @@ namespace OnlineCompiler.Server.Controllers
                 //     var queueInstance = Activator.CreateInstance(constructedType);
                 //     constructedType.GetMethod("Enqueue").Invoke(queueInstance, new Object[]{"firstElement"});
                 //     constructedType.GetMethod("Enqueue").Invoke(queueInstance, new Object[]{"secondElement"});
-                    
+
                 //     // Первый добавленный элемент должен быть первым удаленным в очереди.
                 //     var firstElement = constructedType.GetMethod("Dequeue").Invoke(queueInstance, null);
                 //     if (!"firstElement".Equals(firstElement))
@@ -173,16 +178,17 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                    $"Произошла ошибка при запуске: {ex}");
             }
-            
+
             return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
 
 
         [HttpPost]
         [Route("Stack")]
-        public ExecutionInfo PostStack([FromBody]string? code)
+        public ExecutionInfo PostStack([FromBody] string? code)
         {
             if (code == null)
             {
@@ -202,7 +208,7 @@ namespace OnlineCompiler.Server.Controllers
                 //     var stackInstance = Activator.CreateInstance(constructedType);
                 //     constructedType.GetMethod("Push").Invoke(stackInstance, new Object[]{"firstElement"});
                 //     constructedType.GetMethod("Push").Invoke(stackInstance, new Object[]{"secondElement"});
-                    
+
                 //     // Последний добавленный элемент должен быть первым удаленным в стеке.
                 //     var lastElement = constructedType.GetMethod("Pop").Invoke(stackInstance, null);
                 //     if (!"secondElement".Equals(lastElement))
@@ -223,15 +229,16 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                    $"Произошла ошибка при запуске: {ex}");
             }
-            
+
             return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
 
         [HttpPost]
         [Route("SortedList")]
-        public ExecutionInfo PostSortedList([FromBody]string? code)
+        public ExecutionInfo PostSortedList([FromBody] string? code)
         {
             if (code == null)
             {
@@ -253,18 +260,18 @@ namespace OnlineCompiler.Server.Controllers
                 //     // Add elements
                 //     constructedType.GetMethod("Add").Invoke(sortedListInstance, new Object[]{"firstKey", "firstValue"});
                 //     constructedType.GetMethod("Add").Invoke(sortedListInstance, new Object[]{"secondKey", "secondValue"});
-                    
+
                 //     // Remove an element
                 //     var removeResult = constructedType.GetMethod("Remove").Invoke(sortedListInstance, new Object[]{"firstKey"});
-                    
+
                 //     if ((bool)removeResult == false)
                 //     {
                 //         throw new Exception("Error: Unable to remove an element.");
                 //     }
-                    
+
                 //     // Get value
                 //     var getValueResult = constructedType.GetMethod("GetValueOrDefault").Invoke(sortedListInstance, new Object[]{"secondKey"});
-                    
+
                 //     if ((string)getValueResult != "secondValue")
                 //     {
                 //         throw new Exception($"Error: The value returned was not correct. Expected: 'secondValue', Actual: '{getValueResult}'");
@@ -277,17 +284,17 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                    $"Произошла ошибка при запуске: {ex}");
             }
-            
+
             return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
 
-        
-      
+
         [HttpPost]
         [Route("ObservableCollection")]
-        public ExecutionInfo PostObservableCollection([FromBody]string? code)
+        public ExecutionInfo PostObservableCollection([FromBody] string? code)
         {
             if (code == null)
             {
@@ -308,15 +315,15 @@ namespace OnlineCompiler.Server.Controllers
 
                 //     // Add element
                 //     constructedType.GetMethod("Add").Invoke(observableCollectionInstance, new Object[]{"firstValue"});
-                    
+
                 //     // Remove an element
                 //     var removeResult = constructedType.GetMethod("Remove").Invoke(observableCollectionInstance, new Object[]{"firstValue"});
-                    
+
                 //     if ((bool)removeResult == false)
                 //     {
                 //         throw new Exception("Error: Unable to remove an element.");
                 //     }
-                    
+
                 //     // Check count property
                 //     var countProperty = constructedType.GetProperty("Count");
                 //     if ((int)countProperty.GetValue(observableCollectionInstance) != 0)
@@ -331,16 +338,17 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                    $"Произошла ошибка при запуске: {ex}");
             }
-            
+
             return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
 
 
         [HttpPost]
         [Route("LinkedList")]
-        public ExecutionInfo PostLinkedList([FromBody]string? code)
+        public ExecutionInfo PostLinkedList([FromBody] string? code)
         {
             if (code == null)
             {
@@ -358,17 +366,17 @@ namespace OnlineCompiler.Server.Controllers
                 // if (constructedType != null)
                 // {
                 //     var listInstance = Activator.CreateInstance(constructedType);
-                    
+
                 //     constructedType.GetMethod("Add").Invoke(listInstance, new Object[]{"firstElement"});
                 //     constructedType.GetMethod("Add").Invoke(listInstance, new Object[]{"secondElement"});
-                    
+
                 //     // Проверяем подсчёт элементов.
                 //     var count = (int)constructedType.GetProperty("Count").GetValue(listInstance);
                 //     if (count != 2)
                 //     {
                 //         throw new Exception($"Ошибка: ожидалось 2 элемента, но получено {count}");
                 //     }
-                    
+
                 //     // Удаляем элемент и проверяем подсчёт снова.
                 //     constructedType.GetMethod("Remove").Invoke(listInstance, new Object[]{"secondElement"});
                 //     count = (int)constructedType.GetProperty("Count").GetValue(listInstance);
@@ -384,9 +392,10 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0, $"Произошла ошибка при запуске: {ex}");
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                    $"Произошла ошибка при запуске: {ex}");
             }
-            
+
             return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
         }
 
