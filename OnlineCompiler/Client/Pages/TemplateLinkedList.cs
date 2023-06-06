@@ -2,52 +2,17 @@ namespace OnlineCompiler.Client.Pages;
 
 public static class TemplateLinkedList
 {
-    public static string LinkedListCode=@"// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
+    public static string LinkedListCode=@"
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace System.Collections.Generic
 {
-    public class MyICollectionDebugView<T>
+    public class LinkedList<T> : ICollection<T>, ICollection, IReadOnlyCollection<T>
     {
-        private readonly ICollection<T> collection;
-
-        public MyICollectionDebugView(ICollection<T> collection)
-        {
-            this.collection = collection;
-        }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public T[] Items
-        {
-            get
-            {
-                T[] items = new T[collection.Count];
-                collection.CopyTo(items, 0);
-                return items;
-            }
-        }
-    }
-    [DebuggerTypeProxy(typeof(MyICollectionDebugView<>))]
-    [DebuggerDisplay('Count = {Count}')]
-    [Serializable]
-    [System.Runtime.CompilerServices.TypeForwardedFrom('System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089')]
-    public class LinkedList<T> : ICollection<T>, ICollection, IReadOnlyCollection<T>, ISerializable, IDeserializationCallback
-    {
-        // This LinkedList is a doubly-Linked circular list.
         internal LinkedListNode<T>? head;
         internal int count;
         internal int version;
-        private SerializationInfo? _siInfo; //A temporary variable which we need during deserialization.
-
-        // names for serialization
-        private const string VersionName = 'Version'; // Do not rename (binary serialization)
-        private const string CountName = 'Count'; // Do not rename (binary serialization)
-        private const string ValuesName = 'Data'; // Do not rename (binary serialization)
-
         public LinkedList()
         {
         }
@@ -65,9 +30,8 @@ namespace System.Collections.Generic
             }
         }
 
-        protected LinkedList(SerializationInfo info, StreamingContext context)
+        protected LinkedList(StreamingContext context)
         {
-            _siInfo = info;
         }
 
         public int Count
@@ -201,7 +165,7 @@ namespace System.Collections.Generic
             while (current != null)
             {
                 LinkedListNode<T> temp = current;
-                current = current.Next;   // use Next the instead of 'next', otherwise it will loop forever
+                current = current.Next;   // use Next the instead of next, otherwise it will loop forever
                 temp.Invalidate();
             }
 
@@ -355,59 +319,6 @@ namespace System.Collections.Generic
             InternalRemoveNode(head.prev!);
         }
 
-        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            // Customized serialization for LinkedList.
-            // We need to do this because it will be too expensive to Serialize each node.
-            // This will give us the flexiblility to change internal implementation freely in future.
-            if (info == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            info.AddValue(VersionName, version);
-            info.AddValue(CountName, count); // this is the length of the bucket array.
-
-            if (count != 0)
-            {
-                T[] array = new T[count];
-                CopyTo(array, 0);
-                info.AddValue(ValuesName, array, typeof(T[]));
-            }
-        }
-
-        public virtual void OnDeserialization(object? sender)
-        {
-            if (_siInfo == null)
-            {
-                return; //Somebody had a dependency on this LinkedList and fixed us up before the ObjectManager got to it.
-            }
-
-            int realVersion = _siInfo.GetInt32(VersionName);
-            int count = _siInfo.GetInt32(CountName);
-
-            if (count != 0)
-            {
-                T[]? array = (T[]?)_siInfo.GetValue(ValuesName, typeof(T[]));
-
-                if (array == null)
-                {
-                    throw new InvalidOperationException();
-                }
-                for (int i = 0; i < array.Length; i++)
-                {
-                    AddLast(array[i]);
-                }
-            }
-            else
-            {
-                head = null;
-            }
-
-            version = realVersion;
-            _siInfo = null;
-        }
-
         private void InternalInsertNodeBefore(LinkedListNode<T> node, LinkedListNode<T> newNode)
         {
             newNode.next = node;
@@ -420,7 +331,7 @@ namespace System.Collections.Generic
 
         private void InternalInsertNodeToEmptyList(LinkedListNode<T> newNode)
         {
-            Debug.Assert(head == null && count == 0, 'LinkedList must be empty when this method is called!');
+       
             newNode.next = newNode;
             newNode.prev = newNode;
             head = newNode;
@@ -430,11 +341,10 @@ namespace System.Collections.Generic
 
         internal void InternalRemoveNode(LinkedListNode<T> node)
         {
-            Debug.Assert(node.list == this, 'Deleting the node from another list!');
-            Debug.Assert(head != null, 'This method shouldn't be called on empty list!');
+ 
             if (node.next == node)
             {
-                Debug.Assert(count == 1 && head == node, 'this should only be true for a list with only one node');
+
                 head = null;
             }
             else
@@ -683,7 +593,6 @@ namespace System.Collections.Generic
         }
     }
 }
-
 ";
     
     public static string UserLinkedListCode=@"

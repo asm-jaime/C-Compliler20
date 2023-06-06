@@ -1,781 +1,591 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
 using System.Runtime.Serialization;
 
-namespace System.Collections.Generic;
-
-public class HashSet<T> : IReadOnlyCollection<T>, ICollection<T>
+namespace System.Collections.Generic
 {
-    public const int HashCollisionThreshold = 100;
-
-    /// <summary>
-    /// When constructing a hashset from an existing collection, it may contain duplicates,
-    /// so this is used as the max acceptable excess ratio of capacity to count. Note that
-    /// this is only used on the ctor and not to automatically shrink if the hashset has, e.g,
-    /// a lot of adds followed by removes. Users must explicitly shrink by calling TrimExcess.
-    /// This is set to 3 because capacity is acceptable as 2x rounded up to nearest prime.
-    /// </summary>
-    public const int ShrinkThreshold = 3;
-
-    public const int StartOfFreeList = -3;
-
-    public int[]? _buckets;
-    private Entry[]? _entries;
-    public int _count;
-    public int _freeList;
-    public int _freeCount;
-    public int _version;
-    public IEqualityComparer<T>? _comparer;
-
-    public HashSet() : this((IEqualityComparer<T>?)null)
+    public class LinkedList<T> : ICollection<T>, ICollection, IReadOnlyCollection<T>
     {
-    }
-
-    public HashSet(IEqualityComparer<T>? comparer)
-    {
-        if (comparer is not null &&
-            comparer != EqualityComparer<T>
-                .Default) // first check for null to avoid forcing default comparer instantiation unnecessarily
+        internal LinkedListNode<T>? head;
+        internal int count;
+        internal int version;
+        public LinkedList()
         {
-            _comparer = comparer;
         }
 
-        // Special-case EqualityComparer<string>.Default, StringComparer.Ordinal, and StringComparer.OrdinalIgnoreCase.
-        // We use a non-randomized comparer for improved perf, falling back to a randomized comparer if the
-        // hash buckets become unbalanced.
-        if (typeof(T) == typeof(string))
+        public LinkedList(IEnumerable<T> collection)
         {
-            IEqualityComparer<string>? stringComparer = EqualityComparer<string?>.Default;
-            if (stringComparer is not null)
+            if (collection == null)
             {
-                _comparer = (IEqualityComparer<T>?)stringComparer;
+                throw new InvalidOperationException();
+            }
+
+            foreach (T item in collection)
+            {
+                AddLast(item);
             }
         }
-    }
 
-    public HashSet(int capacity) : this(capacity, null)
-    {
-    }
-
-    public HashSet(IEnumerable<T> collection) : this(collection, null)
-    {
-    }
-
-    public HashSet(IEnumerable<T> collection, IEqualityComparer<T>? comparer) : this(comparer)
-    {
-        if (collection == null)
+        protected LinkedList(StreamingContext context)
         {
-            throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
         }
 
-        if (collection is HashSet<T> otherAsHashSet && EqualityComparersAreEqual(this, otherAsHashSet))
+        public int Count
         {
-            throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
+            get { return count; }
         }
-        else
+
+        public LinkedListNode<T>? First
         {
-            // To avoid excess resizes, first set size based on collection"s count. The collection may
-            // contain duplicates, so call TrimExcess if resulting HashSet is larger than the threshold.
-            if (collection is ICollection<T> coll)
+            get { return head; }
+        }
+
+        public LinkedListNode<T>? Last
+        {
+            get { return head == null ? null : head.prev; }
+        }
+
+        bool ICollection<T>.IsReadOnly
+        {
+            get { return false; }
+        }
+
+        void ICollection<T>.Add(T value)
+        {
+            AddLast(value);
+        }
+
+        public LinkedListNode<T> AddAfter(LinkedListNode<T> node, T value)
+        {
+            ValidateNode(node);
+            LinkedListNode<T> result = new LinkedListNode<T>(node.list!, value);
+            InternalInsertNodeBefore(node.next!, result);
+            return result;
+        }
+
+        public void AddAfter(LinkedListNode<T> node, LinkedListNode<T> newNode)
+        {
+            ValidateNode(node);
+            ValidateNewNode(newNode);
+            InternalInsertNodeBefore(node.next!, newNode);
+            newNode.list = this;
+        }
+
+        public LinkedListNode<T> AddBefore(LinkedListNode<T> node, T value)
+        {
+            ValidateNode(node);
+            LinkedListNode<T> result = new LinkedListNode<T>(node.list!, value);
+            InternalInsertNodeBefore(node, result);
+            if (node == head)
             {
-                int count = coll.Count;
-                if (count > 0)
+                head = result;
+            }
+            return result;
+        }
+
+        public void AddBefore(LinkedListNode<T> node, LinkedListNode<T> newNode)
+        {
+            ValidateNode(node);
+            ValidateNewNode(newNode);
+            InternalInsertNodeBefore(node, newNode);
+            newNode.list = this;
+            if (node == head)
+            {
+                head = newNode;
+            }
+        }
+
+        public LinkedListNode<T> AddFirst(T value)
+        {
+            LinkedListNode<T> result = new LinkedListNode<T>(this, value);
+            if (head == null)
+            {
+                InternalInsertNodeToEmptyList(result);
+            }
+            else
+            {
+                InternalInsertNodeBefore(head, result);
+                head = result;
+            }
+            return result;
+        }
+
+        public void AddFirst(LinkedListNode<T> node)
+        {
+            ValidateNewNode(node);
+
+            if (head == null)
+            {
+                InternalInsertNodeToEmptyList(node);
+            }
+            else
+            {
+                InternalInsertNodeBefore(head, node);
+                head = node;
+            }
+            node.list = this;
+        }
+
+        public LinkedListNode<T> AddLast(T value)
+        {
+            LinkedListNode<T> result = new LinkedListNode<T>(this, value);
+            if (head == null)
+            {
+                InternalInsertNodeToEmptyList(result);
+            }
+            else
+            {
+                InternalInsertNodeBefore(head, result);
+            }
+            return result;
+        }
+
+        public void AddLast(LinkedListNode<T> node)
+        {
+            ValidateNewNode(node);
+
+            if (head == null)
+            {
+                InternalInsertNodeToEmptyList(node);
+            }
+            else
+            {
+                InternalInsertNodeBefore(head, node);
+            }
+            node.list = this;
+        }
+
+        public void Clear()
+        {
+            LinkedListNode<T>? current = head;
+            while (current != null)
+            {
+                LinkedListNode<T> temp = current;
+                current = current.Next;   // use Next the instead of "next", otherwise it will loop forever
+                temp.Invalidate();
+            }
+
+            head = null;
+            count = 0;
+            version++;
+        }
+
+        public bool Contains(T value)
+        {
+            return Find(value) != null;
+        }
+
+        public void CopyTo(T[] array, int index)
+        {
+            if (array == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (index < 0)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (index > array.Length)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (array.Length - index < Count)
+            {
+                throw new InvalidOperationException();
+            }
+
+            LinkedListNode<T>? node = head;
+            if (node != null)
+            {
+                do
                 {
-                    Initialize(count);
-                }
-            }
-
-            UnionWith(collection);
-
-            if (_count > 0 && _entries!.Length / _count > ShrinkThreshold)
-            {
-                TrimExcess();
-            }
-        }
-    }
-
-    public HashSet(int capacity, IEqualityComparer<T>? comparer) : this(comparer)
-    {
-        if (capacity < 0)
-        {
-            throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-        }
-
-        if (capacity > 0)
-        {
-            Initialize(capacity);
-        }
-    }
-
-    protected HashSet(StreamingContext context)
-    {
-    }
-
-
-    private int ExpandPrime(int count)
-    {
-        // This implementation is a simplified version of HashHelpers.ExpandPrime
-        // that generates prime numbers for hash table capacities.
-        int newSize = 2 * count;
-
-        // Skip even numbers, they are not prime
-        if (newSize % 2 == 0)
-            newSize++;
-
-        while (!IsPrime(newSize))
-            newSize += 2;
-
-        return newSize;
-    }
-
-    private static int GetPrime(int min)
-    {
-        if (min < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(min), "Capacity cannot be negative.");
-        }
-
-        // Use a simple algorithm to find the next prime number greater than or equal to "min"
-        for (int i = min | 1; i < int.MaxValue; i += 2)
-        {
-            if (IsPrime(i))
-            {
-                return i;
+                    array[index++] = node!.item;
+                    node = node.next;
+                } while (node != head);
             }
         }
 
-        return min;
-    }
-
-    private static bool IsPrime(int number)
-    {
-        if (number < 2)
+        public LinkedListNode<T>? Find(T value)
         {
-            return false;
-        }
-
-        int sqrt = (int)Math.Sqrt(number);
-        for (int i = 2; i <= sqrt; i++)
-        {
-            if (number % i == 0)
+            LinkedListNode<T>? node = head;
+            EqualityComparer<T> c = EqualityComparer<T>.Default;
+            if (node != null)
             {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    void ICollection<T>.Add(T item) => AddIfNotPresent(item, out _);
-    
-    public void Clear()
-    {
-        int count = _count;
-        if (count > 0)
-        {
-
-            Array.Clear(_buckets);
-            _count = 0;
-            _freeList = -1;
-            _freeCount = 0;
-            Array.Clear(_entries, 0, count);
-        }
-    }
-    
-    public bool Contains(T item) => FindItemIndex(item) >= 0;
-    public void CopyTo(T[] array) => CopyTo(array, 0, Count);
-    public void CopyTo(T[] array, int arrayIndex) => CopyTo(array, arrayIndex, Count);
-    public void CopyTo(T[] array, int arrayIndex, int count)
-    {
-        if (array == null)
-        {
-            throw new Exception();
-        }
-
-        // Check array index valid index into array.
-        if (arrayIndex < 0)
-        {
-            throw new Exception();
-        }
-
-        // Also throw if count less than 0.
-        if (count < 0)
-        {
-            throw new Exception();
-        }
-
-        // Will the array, starting at arrayIndex, be able to hold elements? Note: not
-        // checking arrayIndex >= array.Length (consistency with list of allowing
-        // count of 0; subsequent check takes care of the rest)
-        if (arrayIndex > array.Length || count > array.Length - arrayIndex)
-        {
-            throw new Exception();
-        }
-
-        Entry[]? entries = _entries;
-        for (int i = 0; i < _count && count != 0; i++)
-        {
-            ref Entry entry = ref entries![i];
-            if (entry.Next >= -1)
-            {
-                array[arrayIndex++] = entry.Value;
-                count--;
-            }
-        }
-    }
-    
-    private int FindItemIndex(T item)
-    {
-        int[]? buckets = _buckets;
-        if (buckets != null)
-        {
-            Entry[]? entries = _entries;
-
-            int collisionCount = 0; // Changed to int
-            IEqualityComparer<T>? comparer = _comparer;
-
-            if (comparer == null)
-            {
-                int hashCode = item != null ? item.GetHashCode() : 0;
-                if (typeof(T).IsValueType)
+                if (value != null)
                 {
-                    // ValueType: Devirtualize with EqualityComparer<TValue>.Default intrinsic
-                    int i = GetBucketRef(hashCode) - 1; // Value in _buckets is 1-based
-                    while (i >= 0)
+                    do
                     {
-                        Entry entry = entries[i];
-                        if (entry.HashCode == hashCode && EqualityComparer<T>.Default.Equals(entry.Value, item))
+                        if (c.Equals(node!.item, value))
                         {
-                            return i;
+                            return node;
                         }
-
-                        i = entry.Next;
-
-                        collisionCount++;
-                        if (collisionCount > entries.Length) // Removed the cast to uint
-                        {
-                            // The chain of entries forms a loop, which means a concurrent update has happened.
-                            throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-                        }
-                    }
+                        node = node.next;
+                    } while (node != head);
                 }
                 else
                 {
-                    // Object type: Shared Generic, EqualityComparer<TValue>.Default won"t devirtualize (https://github.com/dotnet/runtime/issues/10050),
-                    // so cache in a local rather than get EqualityComparer per loop iteration.
-                    EqualityComparer<T> defaultComparer = EqualityComparer<T>.Default;
-                    int i = GetBucketRef(hashCode) - 1; // Value in _buckets is 1-based
-                    while (i >= 0)
+                    do
                     {
-                        Entry entry = entries[i];
-                        if (entry.HashCode == hashCode && defaultComparer.Equals(entry.Value, item))
+                        if (node!.item == null)
                         {
-                            return i;
+                            return node;
                         }
-
-                        i = entry.Next;
-
-                        collisionCount++;
-                        if (collisionCount > entries.Length) // Removed the cast to uint
-                        {
-                            // The chain of entries forms a loop, which means a concurrent update has happened.
-                            throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-                        }
-                    }
+                        node = node.next;
+                    } while (node != head);
                 }
             }
-            else
-            {
-                int hashCode = item != null ? comparer.GetHashCode(item) : 0;
-                int i = GetBucketRef(hashCode) - 1; // Value in _buckets is 1-based
-                while (i >= 0)
-                {
-                    Entry entry = entries[i];
-                    if (entry.HashCode == hashCode && comparer.Equals(entry.Value, item))
-                    {
-                        return i;
-                    }
-
-                    i = entry.Next;
-
-                    collisionCount++;
-                    if (collisionCount > entries.Length) // Removed the cast to uint
-                    {
-                        // The chain of entries forms a loop, which means a concurrent update has happened.
-                        throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-                    }
-                }
-            }
+            return null;
         }
 
-        return -1;
-    }
-    
-    private int GetBucketRef(int hashCode)
-    {
-        // Calculate the bucket index directly without using `_buckets`
-        int index = hashCode % _buckets.Length;
-
-        // Return a reference to the bucket at the calculated index
-        return _buckets[index];
-    }
-
-
-    public bool Remove(T item)
-    {
-        if (_buckets != null)
+        public LinkedListNode<T>? FindLast(T value)
         {
-            Entry[]? entries = _entries;
+            if (head == null) return null;
 
-            int collisionCount = 0;
-            int last = -1;
-            int hashCode = item != null ? (_comparer?.GetHashCode(item) ?? item.GetHashCode()) : 0;
-
-            int bucket = GetBucketRef(hashCode);
-            int i = bucket - 1; // Value in buckets is 1-based
-
-            while (i >= 0)
+            LinkedListNode<T>? last = head.prev;
+            LinkedListNode<T>? node = last;
+            EqualityComparer<T> c = EqualityComparer<T>.Default;
+            if (node != null)
             {
-                Entry entry = entries[i];
-
-                if (entry.HashCode == hashCode && (_comparer?.Equals(entry.Value, item) ??
-                                                   EqualityComparer<T>.Default.Equals(entry.Value, item)))
+                if (value != null)
                 {
-                    if (last < 0)
+                    do
                     {
-                        bucket = entry.Next + 1; // Value in buckets is 1-based
-                    }
-                    else
-                    {
-                        entries[last].Next = entry.Next;
-                    }
-                    
-                    entry.Next = StartOfFreeList - _freeList;
+                        if (c.Equals(node!.item, value))
+                        {
+                            return node;
+                        }
 
-                    if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-                    {
-                        entry.Value = default!;
-                    }
-
-                    _freeList = i;
-                    _freeCount++;
-                    return true;
+                        node = node.prev;
+                    } while (node != last);
                 }
-
-                last = i;
-                i = entry.Next;
-
-                collisionCount = collisionCount + 1;
-
-                if (collisionCount > entries.Length)
+                else
                 {
-                    // The chain of entries forms a loop; which means a concurrent update has happened.
-                    // Break out of the loop and throw, rather than looping forever.
-                    throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
+                    do
+                    {
+                        if (node!.item == null)
+                        {
+                            return node;
+                        }
+                        node = node.prev;
+                    } while (node != last);
                 }
             }
+            return null;
         }
 
-        return false;
-    }
-
-    
-    public int Count => _count - _freeCount;
-
-    public bool IsReadOnly { get; }
-
-    public Enumerator GetEnumerator() => new Enumerator(this);
-
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    
-    public bool Add(T item) => AddIfNotPresent(item, out _);
-    
-    public bool TryGetValue(T equalValue, [MaybeNullWhen(false)] out T actualValue)
-    {
-        if (_buckets != null)
+        public Enumerator GetEnumerator()
         {
-            int index = FindItemIndex(equalValue);
-            if (index >= 0)
+            return new Enumerator(this);
+        }
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public bool Remove(T value)
+        {
+            LinkedListNode<T>? node = Find(value);
+            if (node != null)
             {
-                actualValue = _entries![index].Value;
+                InternalRemoveNode(node);
                 return true;
             }
-        }
-
-        actualValue = default;
-        return false;
-    }
-    
-    public void UnionWith(IEnumerable<T> other)
-    {
-        if (other == null)
-        {
-            throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-        }
-
-        foreach (T item in other)
-        {
-            AddIfNotPresent(item, out _);
-        }
-    }
-    
-    public int RemoveWhere(Predicate<T> match)
-    {
-        if (match == null)
-        {
-            throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-        }
-
-        Entry[]? entries = _entries;
-        int numRemoved = 0;
-        for (int i = 0; i < _count; i++)
-        {
-            Entry entry = entries![i];
-            if (entry.Next >= -1)
-            {
-                // Cache value in case delegate removes it
-                T value = entry.Value;
-                if (match(value))
-                {
-                    // Check again that remove actually removed it.
-                    if (Remove(value))
-                    {
-                        numRemoved++;
-                    }
-                }
-            }
-        }
-
-        return numRemoved;
-    }
-    
-    public IEqualityComparer<T> Comparer
-    {
-        get
-        {
-            if (typeof(T) == typeof(string))
-            {
-                return (IEqualityComparer<T>)EqualityComparer<string>.Default;
-            }
-            else
-            {
-                return _comparer ?? EqualityComparer<T>.Default;
-            }
-        }
-    }
-    
-    public int EnsureCapacity(int capacity)
-    {
-        if (capacity < 0)
-        {
-            throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-        }
-
-        int currentCapacity = _entries == null ? 0 : _entries.Length;
-        if (currentCapacity >= capacity)
-        {
-            return currentCapacity;
-        }
-
-        if (_buckets == null)
-        {
-            return Initialize(capacity);
-        }
-
-        int newSize = GetPrime(capacity);
-        Resize(newSize, forceNewHashCodes: false);
-        return newSize;
-    }
-
-    private void Resize()
-    {
-        int newSize = ExpandPrime(_count);
-        // Call the overloaded Resize method with the new size
-        Resize(newSize, forceNewHashCodes: false);
-    }
-
-    private void Resize(int newSize, bool forceNewHashCodes)
-    {
-        var entries = new Entry[newSize];
-
-        int count = _count;
-        Array.Copy(_entries, entries, count);
-
-        if (!typeof(T).IsValueType && forceNewHashCodes)
-        {
-            _comparer = EqualityComparer<T>.Default;
-
-
-            for (int i = 0; i < count; i++)
-            {
-                Entry entry = entries[i];
-                if (entry.Next >= -1)
-                {
-                    entry.HashCode = entry.Value != null ? _comparer!.GetHashCode(entry.Value) : 0;
-                }
-            }
-
-            if (ReferenceEquals(_comparer, EqualityComparer<T>.Default))
-            {
-                _comparer = null;
-            }
-        }
-
-        // Assign member variables after both arrays allocated to guard against corruption from OOM if second fails
-        _buckets = new int[newSize];
-
-        for (int i = 0; i < count; i++)
-        {
-            Entry entry = entries[i];
-            if (entry.Next >= -1)
-            {
-                int bucket = GetBucketRef(entry.HashCode);
-                entry.Next = bucket - 1; // Value in _buckets is 1-based
-                bucket = i + 1;
-            }
-        }
-
-        _entries = entries;
-    }
-    
-    public void TrimExcess()
-    {
-        int capacity = Count;
-
-        int newSize = GetPrime(capacity);
-        Entry[] oldEntries = _entries;
-        int currentCapacity = oldEntries == null ? 0 : oldEntries.Length;
-        if (newSize >= currentCapacity)
-        {
-            return;
-        }
-
-        int oldCount = _count;
-        _version++;
-        Initialize(newSize);
-        Entry[] entries = _entries;
-        int count = 0;
-        for (int i = 0; i < oldCount; i++)
-        {
-            int hashCode = oldEntries[i].HashCode;
-            if (oldEntries[i].Next >= -1)
-            {
-                Entry entry = entries[count];
-                entry = oldEntries[i];
-                int bucket = GetBucketRef(hashCode);
-                entry.Next = bucket - 1; // Value in _buckets is 1-based
-                bucket = count + 1;
-                count++;
-            }
-        }
-
-        _count = capacity;
-        _freeCount = 0;
-    }
-    
-    private int Initialize(int capacity)
-    {
-        int size = GetPrime(capacity);
-        var buckets = new int[size];
-        var entries = new Entry[size];
-
-        // Assign member variables after both arrays are allocated to guard against corruption from OOM if second fails.
-        _freeList = -1;
-        _buckets = buckets;
-        _entries = entries;
-
-        return size;
-    }
-    
-    private bool AddIfNotPresent(T value, out int location)
-    {
-        if (_buckets == null)
-        {
-            Initialize(0);
-        }
-        
-
-        Entry[]? entries = _entries;
-
-        IEqualityComparer<T>? comparer = _comparer;
-        int hashCode;
-
-        int collisionCount = 0; // Changed to int
-
-        int bucket = default;
-
-        if (comparer == null)
-        {
-            hashCode = value != null ? value.GetHashCode() : 0;
-            bucket = GetBucketRef(hashCode);
-            int i = bucket - 1; // Value in _buckets is 1-based
-            while (i >= 0)
-            {
-                Entry entry = entries[i];
-                if (entry.HashCode == hashCode && EqualityComparer<T>.Default.Equals(entry.Value, value))
-                {
-                    location = i;
-                    return false;
-                }
-
-                i = entry.Next;
-
-                collisionCount++;
-                if (collisionCount > entries.Length) // Removed the cast to uint
-                {
-                    // The chain of entries forms a loop, which means a concurrent update has happened.
-                    throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-                }
-            }
-        }
-        else
-        {
-            hashCode = value != null ? comparer.GetHashCode(value) : 0;
-            bucket = GetBucketRef(hashCode);
-            int i = bucket - 1; // Value in _buckets is 1-based
-            while (i >= 0)
-            {
-                Entry entry = entries[i];
-                if (entry.HashCode == hashCode && comparer.Equals(entry.Value, value))
-                {
-                    location = i;
-                    return false;
-                }
-
-                i = entry.Next;
-
-                collisionCount++;
-                if (collisionCount > entries.Length) // Removed the cast to uint
-                {
-                    // The chain of entries forms a loop, which means a concurrent update has happened.
-                    throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-                }
-            }
-        }
-
-        int index;
-        if (_freeCount > 0)
-        {
-            index = _freeList;
-            _freeCount--;
-            _freeList = StartOfFreeList - entries[_freeList].Next;
-        }
-        else
-        {
-            int count = _count;
-            if (count == entries.Length)
-            {
-                Resize();
-                bucket = GetBucketRef(hashCode);
-            }
-
-            index = count;
-            _count = count + 1;
-            entries = _entries;
-        }
-
-        Entry myNewEntry = entries![index];
-        myNewEntry.HashCode = hashCode;
-        myNewEntry.Next = bucket - 1; // Value in _buckets is 1-based
-        myNewEntry.Value = value;
-        bucket = index + 1;
-        _version++;
-        location = index;
-
-        // Value types never rehash
-        if (!typeof(T).IsValueType && collisionCount > HashCollisionThreshold &&
-            comparer is IEqualityComparer<string?>)
-        {
-            // If we hit the collision threshold we"ll need to switch to the comparer which is using randomized string hashing
-            // i.e. EqualityComparer<string>.Default.
-            Resize(entries.Length, forceNewHashCodes: true);
-            location = FindItemIndex(value);
-        }
-
-        return true;
-    }
-    
-    internal static bool EqualityComparersAreEqual(HashSet<T> set1, HashSet<T> set2) =>
-        set1.Comparer.Equals(set2.Comparer);
-
-    private struct Entry
-    {
-        public int HashCode;
-        
-        public int Next;
-
-        public T Value;
-    }
-
-    public struct Enumerator : IEnumerator<T>
-    {
-        private readonly HashSet<T> _hashSet;
-        private readonly int _version;
-        private int _index;
-        private T _current;
-
-        internal Enumerator(HashSet<T> hashSet)
-        {
-            _hashSet = hashSet;
-            _version = hashSet._version;
-            _index = 0;
-            _current = default!;
-        }
-
-        public bool MoveNext()
-        {
-            if (_version != _hashSet._version)
-            {
-                throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-            }
-
-            // Use unsigned comparison since we set index to dictionary.count+1 when the enumeration ends.
-            // dictionary.count+1 could be negative if dictionary.count is int.MaxValue
-            while (_index < _hashSet._count)
-            {
-                Entry entry = _hashSet._entries![_index++];
-                if (entry.Next >= -1)
-                {
-                    _current = entry.Value;
-                    return true;
-                }
-            }
-
-            _index = _hashSet._count + 1;
-            _current = default!;
             return false;
         }
 
-        public T Current => _current;
-
-        public void Dispose()
+        public void Remove(LinkedListNode<T> node)
         {
+            ValidateNode(node);
+            InternalRemoveNode(node);
         }
 
-        object? IEnumerator.Current
+        public void RemoveFirst()
         {
-            get
+            if (head == null) { throw new InvalidOperationException(); }
+            InternalRemoveNode(head);
+        }
+
+        public void RemoveLast()
+        {
+            if (head == null) { throw new InvalidOperationException(); }
+            InternalRemoveNode(head.prev!);
+        }
+
+        private void InternalInsertNodeBefore(LinkedListNode<T> node, LinkedListNode<T> newNode)
+        {
+            newNode.next = node;
+            newNode.prev = node.prev;
+            node.prev!.next = newNode;
+            node.prev = newNode;
+            version++;
+            count++;
+        }
+
+        private void InternalInsertNodeToEmptyList(LinkedListNode<T> newNode)
+        {
+            Debug.Assert(head == null && count == 0, "LinkedList must be empty when this method is called!");
+            newNode.next = newNode;
+            newNode.prev = newNode;
+            head = newNode;
+            version++;
+            count++;
+        }
+
+        internal void InternalRemoveNode(LinkedListNode<T> node)
+        {
+            Debug.Assert(node.list == this, "Deleting the node from another list!");
+            Debug.Assert(head != null, "This method shouldn't be called on empty list!");
+            if (node.next == node)
             {
-                if (_index == 0 || (_index == _hashSet._count + 1))
+                Debug.Assert(count == 1 && head == node, "this should only be true for a list with only one node");
+                head = null;
+            }
+            else
+            {
+                node.next!.prev = node.prev;
+                node.prev!.next = node.next;
+                if (head == node)
                 {
-                    throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
+                    head = node.next;
+                }
+            }
+            node.Invalidate();
+            count--;
+            version++;
+        }
+
+        internal void ValidateNewNode(LinkedListNode<T> node)
+        {
+            if (node == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (node.list != null)
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        internal void ValidateNode(LinkedListNode<T> node)
+        {
+            if (node == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (node.list != this)
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        bool ICollection.IsSynchronized
+        {
+            get { return false; }
+        }
+
+        object ICollection.SyncRoot => this;
+
+        void ICollection.CopyTo(Array array, int index)
+        {
+            if (array == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (array.Rank != 1)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (array.GetLowerBound(0) != 0)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (index < 0)
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (array.Length - index < Count)
+            {
+                throw new InvalidOperationException();
+            }
+
+            T[]? tArray = array as T[];
+            if (tArray != null)
+            {
+                CopyTo(tArray, index);
+            }
+            else
+            {
+                // No need to use reflection to verify that the types are compatible because it isn't 100% correct and we can rely
+                // on the runtime validation during the cast that happens below (i.e. we will get an ArrayTypeMismatchException).
+                object?[]? objects = array as object[];
+                if (objects == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                LinkedListNode<T>? node = head;
+                try
+                {
+                    if (node != null)
+                    {
+                        do
+                        {
+                            objects[index++] = node!.item;
+                            node = node.next;
+                        } while (node != head);
+                    }
+                }
+                catch (ArrayTypeMismatchException)
+                {
+                    throw new InvalidOperationException();
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public struct Enumerator : IEnumerator<T>, IEnumerator, ISerializable, IDeserializationCallback
+        {
+            private readonly LinkedList<T> _list;
+            private LinkedListNode<T>? _node;
+            private readonly int _version;
+            private T? _current;
+            private int _index;
+
+            internal Enumerator(LinkedList<T> list)
+            {
+                _list = list;
+                _version = list.version;
+                _node = list.head;
+                _current = default;
+                _index = 0;
+            }
+
+            public T Current => _current!;
+
+            object? IEnumerator.Current
+            {
+                get
+                {
+                    if (_index == 0 || (_index == _list.Count + 1))
+                    {
+                        throw new InvalidOperationException();
+                    }
+
+                    return Current;
+                }
+            }
+
+            public bool MoveNext()
+            {
+                if (_version != _list.version)
+                {
+                    throw new InvalidOperationException();
                 }
 
-                return _current;
+                if (_node == null)
+                {
+                    _index = _list.Count + 1;
+                    return false;
+                }
+
+                ++_index;
+                _current = _node.item;
+                _node = _node.next;
+                if (_node == _list.head)
+                {
+                    _node = null;
+                }
+                return true;
+            }
+
+            void IEnumerator.Reset()
+            {
+                if (_version != _list.version)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                _current = default;
+                _node = _list.head;
+                _index = 0;
+            }
+
+            public void Dispose()
+            {
+            }
+
+            void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
+            {
+                throw new PlatformNotSupportedException();
+            }
+
+            void IDeserializationCallback.OnDeserialization(object? sender)
+            {
+                throw new PlatformNotSupportedException();
             }
         }
+    }
 
-        void IEnumerator.Reset()
+    // Note following class is not serializable since we customized the serialization of LinkedList.
+    public sealed class LinkedListNode<T>
+    {
+        internal LinkedList<T>? list;
+        internal LinkedListNode<T>? next;
+        internal LinkedListNode<T>? prev;
+        internal T item;
+
+        public LinkedListNode(T value)
         {
-            if (_version != _hashSet._version)
-            {
-                throw new InvalidOperationException("Invalid operation: Enum operation can't happen.");
-            }
+            item = value;
+        }
 
-            _index = 0;
-            _current = default!;
+        internal LinkedListNode(LinkedList<T> list, T value)
+        {
+            this.list = list;
+            item = value;
+        }
+
+        public LinkedList<T>? List
+        {
+            get { return list; }
+        }
+
+        public LinkedListNode<T>? Next
+        {
+            get { return next == null || next == list!.head ? null : next; }
+        }
+
+        public LinkedListNode<T>? Previous
+        {
+            get { return prev == null || this == list!.head ? null : prev; }
+        }
+
+        public T Value
+        {
+            get { return item; }
+            set { item = value; }
+        }
+
+        /// <summary>Gets a reference to the value held by the node.</summary>
+        public ref T ValueRef => ref item;
+
+        internal void Invalidate()
+        {
+            list = null;
+            next = null;
+            prev = null;
         }
     }
 }

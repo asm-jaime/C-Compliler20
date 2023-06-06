@@ -1,4 +1,5 @@
-﻿using OnlineCompiler.Shared;
+﻿using System.Reflection;
+using OnlineCompiler.Shared;
 using Microsoft.AspNetCore.Mvc;
 using OnlineCompiler.Server.Handlers;
 
@@ -363,28 +364,24 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     throw new Exception("Error");
                 }
-                // if (constructedType != null)
-                // {
-                //     var listInstance = Activator.CreateInstance(constructedType);
 
-                //     constructedType.GetMethod("Add").Invoke(listInstance, new Object[]{"firstElement"});
-                //     constructedType.GetMethod("Add").Invoke(listInstance, new Object[]{"secondElement"});
+                if (constructedType != null)
+                {
+                    var listInstance = Activator.CreateInstance(constructedType);
+                    // В классе два метода AddLast (см. код), есть ещё похожие методы и нужно конкретно выбирать, что вызвать
+                    var addLastMethod =  constructedType
+                        .GetMethods()
+                        .First(mi => mi.Name == "AddLast" && mi.ReturnType != typeof(void));
+                    addLastMethod.Invoke(listInstance,new object[]{ "firstElement" });
+                    addLastMethod.Invoke(listInstance, new object[]{ "secondElement" });
 
-                //     // Проверяем подсчёт элементов.
-                //     var count = (int)constructedType.GetProperty("Count").GetValue(listInstance);
-                //     if (count != 2)
-                //     {
-                //         throw new Exception($"Ошибка: ожидалось 2 элемента, но получено {count}");
-                //     }
-
-                //     // Удаляем элемент и проверяем подсчёт снова.
-                //     constructedType.GetMethod("Remove").Invoke(listInstance, new Object[]{"secondElement"});
-                //     count = (int)constructedType.GetProperty("Count").GetValue(listInstance);
-                //     if (count != 1)
-                //     {
-                //         throw new Exception($"Ошибка: ожидался 1 элемент, но получено {count}");
-                //     }
-                // }
+                    // Проверяем подсчёт элементов.
+                    var count = (int)constructedType.GetProperty("Count").GetValue(listInstance);
+                    if (count != 2)
+                    {
+                        throw new Exception($"Ошибка: ожидалось 2 элемента, но получено {count}");
+                    }
+                }
             }
             catch (ArgumentException e)
             {
