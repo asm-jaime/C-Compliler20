@@ -38,12 +38,13 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     throw new Exception("Error");
                 }
-                // if (constructedType != null)
-                // {
-                //     var carInstance = Activator.CreateInstance(constructedType);
-                //     constructedType.GetMethod("Add").Invoke(carInstance, new Object[]{"suka", "suk"});
-                //     constructedType.GetMethod("Add").Invoke(carInstance, new Object[]{"wtf", "wtf1"});
-                // }
+
+                if (constructedType != null)
+                {
+                    var carInstance = Activator.CreateInstance(constructedType);
+                    constructedType.GetMethod("Add").Invoke(carInstance, new Object[] {"suka", "suk"});
+                    constructedType.GetMethod("Add").Invoke(carInstance, new Object[] {"wtf", "wtf1"});
+                }
             }
             catch (ArgumentException e)
             {
