@@ -3,49 +3,20 @@ namespace OnlineCompiler.Client.Pages;
 public static class TemplateList
 {
     public static string ListCode = @"
-    // Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace System.Collections.Generic
 {
-    public class MyICollectionDebugView<T>
-    {
-        private readonly ICollection<T> collection;
-
-        public MyICollectionDebugView(ICollection<T> collection)
-        {
-            this.collection = collection;
-        }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public T[] Items
-        {
-            get
-            {
-                T[] items = new T[collection.Count];
-                collection.CopyTo(items, 0);
-                return items;
-            }
-        }
-    }
-    [DebuggerTypeProxy(typeof(MyICollectionDebugView<>))]
-   
     public class List<T> : IList<T>, IList, IReadOnlyList<T>
     {
         private const int DefaultCapacity = 4;
 
-        internal T[] _items; // Do not rename (binary serialization)
-        internal int _size; // Do not rename (binary serialization)
-        private int _version; // Do not rename (binary serialization)
+        internal T[] _items;
+        internal int _size;
+        private int _version;
 
-#pragma warning disable CA1825 // avoid the extra generic instantiation for Array.Empty<T>()
         private static readonly T[] s_emptyArray = new T[0];
-#pragma warning restore CA1825
 
         // Constructs a List. The list is initially empty and has a capacity
         // of zero. Upon adding the first element to the list the capacity is
@@ -59,7 +30,6 @@ namespace System.Collections.Generic
         // Constructs a List with a given initial capacity. The list is
         // initially empty, but will have room for the given number of elements
         // before any reallocations are required.
-        //
         public List(int capacity)
         {
             if (capacity < 0)
@@ -74,7 +44,6 @@ namespace System.Collections.Generic
         // Constructs a List, copying the contents of the given collection. The
         // size and capacity of the new list will both be equal to the size of the
         // given collection.
-        //
         public List(IEnumerable<T> collection)
         {
             if (collection == null)
@@ -110,7 +79,6 @@ namespace System.Collections.Generic
         // Gets and sets the capacity of this list.  The capacity is the size of
         // the internal array used to hold items.  When set, the internal
         // array of the list is reallocated to the given capacity.
-        //
         public int Capacity
         {
             get => _items.Length;
@@ -130,6 +98,7 @@ namespace System.Collections.Generic
                         {
                             Array.Copy(_items, newItems, _size);
                         }
+
                         _items = newItems;
                     }
                     else
@@ -162,19 +131,21 @@ namespace System.Collections.Generic
             get
             {
                 // Following trick can reduce the range check by one
-                if ((uint)index >= (uint)_size)
+                if ((uint) index >= (uint) _size)
                 {
                     throw new InvalidOperationException();
                 }
+
                 return _items[index];
             }
 
             set
             {
-                if ((uint)index >= (uint)_size)
+                if ((uint) index >= (uint) _size)
                 {
                     throw new InvalidOperationException();
                 }
+
                 _items[index] = value;
                 _version++;
             }
@@ -192,11 +163,9 @@ namespace System.Collections.Generic
             get => this[index];
             set
             {
-                throw new InvalidOperationException();
-
                 try
                 {
-                    this[index] = (T)value!;
+                    this[index] = (T) value!;
                 }
                 catch (InvalidCastException)
                 {
@@ -208,14 +177,12 @@ namespace System.Collections.Generic
         // Adds the given object to the end of this list. The size of the list is
         // increased by one. If required, the capacity of the list is doubled
         // before adding the new element.
-        //
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(T item)
         {
             _version++;
             T[] array = _items;
             int size = _size;
-            if ((uint)size < (uint)array.Length)
+            if ((uint) size < (uint) array.Length)
             {
                 _size = size + 1;
                 array[size] = item;
@@ -227,7 +194,6 @@ namespace System.Collections.Generic
         }
 
         // Non-inline from List.Add to improve its code quality as uncommon path
-        [MethodImpl(MethodImplOptions.NoInlining)]
         private void AddWithResize(T item)
         {
             int size = _size;
@@ -238,11 +204,9 @@ namespace System.Collections.Generic
 
         int IList.Add(object? item)
         {
-            throw new InvalidOperationException();
-
             try
             {
-                Add((T)item!);
+                Add((T) item!);
             }
             catch (InvalidCastException)
             {
@@ -255,53 +219,13 @@ namespace System.Collections.Generic
         // Adds the elements of the given collection to the end of this list. If
         // required, the capacity of the list is increased to twice the previous
         // capacity or the new size, whichever is larger.
-        //
         public void AddRange(IEnumerable<T> collection)
             => InsertRange(_size, collection);
 
         public ReadOnlyCollection<T> AsReadOnly()
             => new ReadOnlyCollection<T>(this);
 
-        // Searches a section of the list for a given element using a binary search
-        // algorithm. Elements of the list are compared to the search value using
-        // the given IComparer interface. If comparer is null, elements of
-        // the list are compared to the search value using the IComparable
-        // interface, which in that case must be implemented by all elements of the
-        // list and the given search value. This method assumes that the given
-        // section of the list is already sorted; if this is not the case, the
-        // result will be incorrect.
-        //
-        // The method returns the index of the given value in the list. If the
-        // list does not contain the given value, the method returns a negative
-        // integer. The bitwise complement operator (~) can be applied to a
-        // negative result to produce the index of the first element (if any) that
-        // is larger than the given search value. This is also the index at which
-        // the search value should be inserted into the list in order for the list
-        // to remain sorted.
-        //
-        // The method uses the Array.BinarySearch method to perform the
-        // search.
-        //
-        public int BinarySearch(int index, int count, T item, IComparer<T>? comparer)
-        {
-            if (index < 0)
-                throw new InvalidOperationException();
-            if (count < 0)
-                throw new InvalidOperationException();
-            if (_size - index < count)
-                throw new InvalidOperationException();
-
-            return Array.BinarySearch<T>(_items, index, count, item, comparer);
-        }
-
-        public int BinarySearch(T item)
-            => BinarySearch(0, Count, item, null);
-
-        public int BinarySearch(T item, IComparer<T>? comparer)
-            => BinarySearch(0, Count, item, comparer);
-
         // Clears the contents of List.
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
             _version++;
@@ -341,8 +265,9 @@ namespace System.Collections.Generic
         {
             if (IsCompatibleObject(item))
             {
-                return Contains((T)item!);
+                return Contains((T) item!);
             }
+
             return false;
         }
 
@@ -358,6 +283,7 @@ namespace System.Collections.Generic
             {
                 list._items[i] = converter(_items[i]);
             }
+
             list._size = _size;
             return list;
         }
@@ -442,6 +368,7 @@ namespace System.Collections.Generic
                     return _items[i];
                 }
             }
+
             return default;
         }
 
@@ -460,6 +387,7 @@ namespace System.Collections.Generic
                     list.Add(_items[i]);
                 }
             }
+
             return list;
         }
 
@@ -471,7 +399,7 @@ namespace System.Collections.Generic
 
         public int FindIndex(int startIndex, int count, Predicate<T> match)
         {
-            if ((uint)startIndex > (uint)_size)
+            if ((uint) startIndex > (uint) _size)
             {
                 throw new InvalidOperationException();
             }
@@ -491,6 +419,7 @@ namespace System.Collections.Generic
             {
                 if (match(_items[i])) return i;
             }
+
             return -1;
         }
 
@@ -508,6 +437,7 @@ namespace System.Collections.Generic
                     return _items[i];
                 }
             }
+
             return default;
         }
 
@@ -534,8 +464,7 @@ namespace System.Collections.Generic
             }
             else
             {
-        
-                if ((uint)startIndex >= (uint)_size)
+                if ((uint) startIndex >= (uint) _size)
                 {
                     throw new InvalidOperationException();
                 }
@@ -555,36 +484,14 @@ namespace System.Collections.Generic
                     return i;
                 }
             }
+
             return -1;
-        }
-
-        public void ForEach(Action<T> action)
-        {
-            if (action == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            int version = _version;
-
-            for (int i = 0; i < _size; i++)
-            {
-                if (version != _version)
-                {
-                    break;
-                }
-                action(_items[i]);
-            }
-
-            if (version != _version)
-                throw new InvalidOperationException();
         }
 
         // Returns an enumerator for this list with the given
         // permission for removal of elements. If modifications made to the list
         // while an enumeration is in progress, the MoveNext and
         // GetObject methods of the enumerator will throw an exception.
-        //
         public Enumerator GetEnumerator()
             => new Enumerator(this);
 
@@ -593,29 +500,6 @@ namespace System.Collections.Generic
 
         IEnumerator IEnumerable.GetEnumerator()
             => new Enumerator(this);
-
-        public List<T> GetRange(int index, int count)
-        {
-            if (index < 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (count < 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (_size - index < count)
-            {
-                throw new InvalidOperationException();
-            }
-
-            List<T> list = new List<T>(count);
-            Array.Copy(_items, index, list._items, 0, count);
-            list._size = count;
-            return list;
-        }
 
         // Returns the index of the first occurrence of a given value in a range of
         // this list. The list is searched forwards from beginning to end.
@@ -632,8 +516,9 @@ namespace System.Collections.Generic
         {
             if (IsCompatibleObject(item))
             {
-                return IndexOf((T)item!);
+                return IndexOf((T) item!);
             }
+
             return -1;
         }
 
@@ -680,15 +565,17 @@ namespace System.Collections.Generic
         public void Insert(int index, T item)
         {
             // Note that insertions at the end are legal.
-            if ((uint)index > (uint)_size)
+            if ((uint) index > (uint) _size)
             {
                 throw new InvalidOperationException();
             }
+
             if (_size == _items.Length) EnsureCapacity(_size + 1);
             if (index < _size)
             {
                 Array.Copy(_items, index, _items, index + 1, _size - index);
             }
+
             _items[index] = item;
             _size++;
             _version++;
@@ -696,18 +583,15 @@ namespace System.Collections.Generic
 
         void IList.Insert(int index, object? item)
         {
-            throw new InvalidOperationException();
-
             try
             {
-                Insert(index, (T)item!);
+                Insert(index, (T) item!);
             }
             catch (InvalidCastException)
             {
                 throw new InvalidOperationException();
             }
         }
-
 
 
         public void InsertRange(int index, IEnumerable<T> collection)
@@ -717,7 +601,7 @@ namespace System.Collections.Generic
                 throw new InvalidOperationException();
             }
 
-            if ((uint)index > (uint)_size)
+            if ((uint) index > (uint) _size)
             {
                 throw new InvalidOperationException();
             }
@@ -733,7 +617,7 @@ namespace System.Collections.Generic
                         Array.Copy(_items, index, _items, index + count, _size - index);
                     }
 
-       
+
                     if (this == c)
                     {
                         // Copy first part of _items to insert location
@@ -745,6 +629,7 @@ namespace System.Collections.Generic
                     {
                         c.CopyTo(_items, index);
                     }
+
                     _size += count;
                 }
             }
@@ -758,6 +643,7 @@ namespace System.Collections.Generic
                     }
                 }
             }
+
             _version++;
         }
 
@@ -772,7 +658,8 @@ namespace System.Collections.Generic
         public int LastIndexOf(T item)
         {
             if (_size == 0)
-            {  // Special case for empty list
+            {
+                // Special case for empty list
                 return -1;
             }
             else
@@ -819,7 +706,8 @@ namespace System.Collections.Generic
             }
 
             if (_size == 0)
-            {  // Special case for empty list
+            {
+                // Special case for empty list
                 return -1;
             }
 
@@ -854,7 +742,7 @@ namespace System.Collections.Generic
         {
             if (IsCompatibleObject(item))
             {
-                Remove((T)item!);
+                Remove((T) item!);
             }
         }
 
@@ -867,7 +755,7 @@ namespace System.Collections.Generic
                 throw new InvalidOperationException();
             }
 
-            int freeIndex = 0;   // the first free slot in items array
+            int freeIndex = 0; // the first free slot in items array
 
             // Find the first item which needs to be removed.
             while (freeIndex < _size && !match(_items[freeIndex])) freeIndex++;
@@ -888,7 +776,8 @@ namespace System.Collections.Generic
 
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             {
-                Array.Clear(_items, freeIndex, _size - freeIndex); // Clear the elements so that the gc can reclaim the references.
+                Array.Clear(_items, freeIndex,
+                    _size - freeIndex); // Clear the elements so that the gc can reclaim the references.
             }
 
             int result = _size - freeIndex;
@@ -901,177 +790,23 @@ namespace System.Collections.Generic
         // decreased by one.
         public void RemoveAt(int index)
         {
-            if ((uint)index >= (uint)_size)
+            if ((uint) index >= (uint) _size)
             {
                 throw new InvalidOperationException();
             }
+
             _size--;
             if (index < _size)
             {
                 Array.Copy(_items, index + 1, _items, index, _size - index);
             }
+
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             {
                 _items[_size] = default!;
             }
+
             _version++;
-        }
-
-        // Removes a range of elements from this list.
-        public void RemoveRange(int index, int count)
-        {
-            if (index < 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (count < 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (_size - index < count)
-                throw new InvalidOperationException();
-
-            if (count > 0)
-            {
-                _size -= count;
-                if (index < _size)
-                {
-                    Array.Copy(_items, index + count, _items, index, _size - index);
-                }
-
-                _version++;
-                if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-                {
-                    Array.Clear(_items, _size, count);
-                }
-            }
-        }
-
-        // Reverses the elements in this list.
-        public void Reverse()
-            => Reverse(0, Count);
-
-        // Reverses the elements in a range of this list. Following a call to this
-        // method, an element in the range given by index and count
-        // which was previously located at index i will now be located at
-        // index index + (index + count - i - 1).
-        //
-        public void Reverse(int index, int count)
-        {
-            if (index < 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (count < 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (_size - index < count)
-                throw new InvalidOperationException();
-
-            if (count > 1)
-            {
-                Array.Reverse(_items, index, count);
-            }
-            _version++;
-        }
-
-        // Sorts the elements in this list.  Uses the default comparer and
-        // Array.Sort.
-        public void Sort()
-            => Sort(0, Count, null);
-
-        // Sorts the elements in this list.  Uses Array.Sort with the
-        // provided comparer.
-        public void Sort(IComparer<T>? comparer)
-            => Sort(0, Count, comparer);
-
-        // Sorts the elements in a section of this list. The sort compares the
-        // elements to each other using the given IComparer interface. If
-        // comparer is null, the elements are compared to each other using
-        // the IComparable interface, which in that case must be implemented by all
-        // elements of the list.
-        //
-        // This method uses the Array.Sort method to sort the elements.
-        //
-        public void Sort(int index, int count, IComparer<T>? comparer)
-        {
-            if (index < 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (count < 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (_size - index < count)
-                throw new InvalidOperationException();
-
-            if (count > 1)
-            {
-                Array.Sort<T>(_items, index, count, comparer);
-            }
-            _version++;
-        }
-
-        public void Sort(Comparison<T> comparison)
-        {
-            if (comparison == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (_size > 1)
-            {
-                throw new InvalidOperationException();
-            }
-            _version++;
-        }
-
-        // ToArray returns an array containing the contents of the List.
-        // This requires copying the List, which is an O(n) operation.
-        public T[] ToArray()
-        {
-            if (_size == 0)
-            {
-                return s_emptyArray;
-            }
-
-            T[] array = new T[_size];
-            Array.Copy(_items, array, _size);
-            return array;
-        }
-
-        public void TrimExcess()
-        {
-            int threshold = (int)(((double)_items.Length) * 0.9);
-            if (_size < threshold)
-            {
-                Capacity = _size;
-            }
-        }
-
-        public bool TrueForAll(Predicate<T> match)
-        {
-            if (match == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            for (int i = 0; i < _size; i++)
-            {
-                if (!match(_items[i]))
-                {
-                    return false;
-                }
-            }
-            return true;
         }
 
         public struct Enumerator : IEnumerator<T>, IEnumerator
@@ -1097,12 +832,13 @@ namespace System.Collections.Generic
             {
                 List<T> localList = _list;
 
-                if (_version == localList._version && ((uint)_index < (uint)localList._size))
+                if (_version == localList._version && ((uint) _index < (uint) localList._size))
                 {
                     _current = localList._items[_index];
                     _index++;
                     return true;
                 }
+
                 return MoveNextRare();
             }
 
@@ -1128,6 +864,7 @@ namespace System.Collections.Generic
                     {
                         throw new InvalidOperationException();
                     }
+
                     return Current;
                 }
             }
@@ -1145,8 +882,6 @@ namespace System.Collections.Generic
         }
     }
 }
-
- 
 ";
     
     public static string UserListCode = @"

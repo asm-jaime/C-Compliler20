@@ -2,49 +2,12 @@ namespace OnlineCompiler.Client.Pages;
 
 public static class TemplateStack
 {
-    public static string StackCode = @"// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
-/*=============================================================================
-**
-**
-** Purpose: An array implementation of a generic stack.
-**
-**
-=============================================================================*/
-
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+    public static string StackCode = @"
 using System.Runtime.CompilerServices;
 
 namespace System.Collections.Generic
 {
-    public class MyICollectionDebugView<T>
-    {
-        private readonly ICollection<T> collection;
-
-        public MyICollectionDebugView(ICollection<T> collection)
-        {
-            this.collection = collection;
-        }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public T[] Items
-        {
-            get
-            {
-                T[] items = new T[collection.Count];
-                collection.CopyTo(items, 0);
-                return items;
-            }
-        }
-    }
-    [DebuggerTypeProxy(typeof(MyICollectionDebugView<>))]
-    [DebuggerDisplay('Count = {Count}')]
-    [Serializable]
-    [System.Runtime.CompilerServices.TypeForwardedFrom('System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089')]
-    public class Stack<T> : IEnumerable<T>,
-        System.Collections.ICollection,
+    public class Stack<T> : System.Collections.ICollection,
         IReadOnlyCollection<T>
     {
         private T[] _array; // Storage for stack elements. Do not rename (binary serialization)
@@ -126,8 +89,7 @@ namespace System.Collections.Generic
             {
                 throw new InvalidOperationException();
             }
-
-            Debug.Assert(array != _array);
+            
             int srcIndex = 0;
             int dstIndex = arrayIndex + _size;
             while (srcIndex < _size)
@@ -216,7 +178,7 @@ namespace System.Collections.Generic
             return array[size];
         }
 
-        public bool TryPeek([MaybeNullWhen(false)] out T result)
+        public bool TryPeek(out T result)
         {
             int size = _size - 1;
             T[] array = _array;
@@ -255,7 +217,7 @@ namespace System.Collections.Generic
             return item;
         }
 
-        public bool TryPop([MaybeNullWhen(false)] out T result)
+        public bool TryPop(out T result)
         {
             int size = _size - 1;
             T[] array = _array;
@@ -293,9 +255,7 @@ namespace System.Collections.Generic
                 PushWithResize(item);
             }
         }
-
-        // Non-inline from Stack.Push to improve its code quality as uncommon path
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        
         private void PushWithResize(T item)
         {
             Array.Resize(ref _array, (_array.Length == 0) ? DefaultCapacity : 2 * _array.Length);
@@ -322,11 +282,10 @@ namespace System.Collections.Generic
 
         private void ThrowForEmptyStack()
         {
-            Debug.Assert(_size == 0);
             throw new InvalidOperationException();
         }
 
-        public struct Enumerator : IEnumerator<T>, System.Collections.IEnumerator
+        public struct Enumerator : IEnumerator<T>
         {
             private readonly Stack<T> _stack;
             private readonly int _version;
@@ -383,7 +342,6 @@ namespace System.Collections.Generic
 
             private void ThrowEnumerationNotStartedOrEnded()
             {
-                Debug.Assert(_index == -1 || _index == -2);
                 throw new InvalidOperationException();
             }
 
@@ -401,7 +359,6 @@ namespace System.Collections.Generic
         }
     }
 }
-
 ";
     
     public static string UserStackCode=@"

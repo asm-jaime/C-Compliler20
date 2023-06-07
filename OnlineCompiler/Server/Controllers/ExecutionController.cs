@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.ObjectModel;
+using System.Reflection;
 using OnlineCompiler.Shared;
 using Microsoft.AspNetCore.Mvc;
 using OnlineCompiler.Server.Handlers;
@@ -78,12 +79,12 @@ namespace OnlineCompiler.Server.Controllers
                 if (constructedType != null)
                 {
                     var setInstance = Activator.CreateInstance(constructedType);
-                    constructedType.GetMethod("Add").Invoke(setInstance, new Object[] { "firstElement" });
-                    constructedType.GetMethod("Add").Invoke(setInstance, new Object[] { "firstElement" });
+                    constructedType.GetMethod("Add").Invoke(setInstance, new Object[] {"firstElement"});
+                    constructedType.GetMethod("Add").Invoke(setInstance, new Object[] {"firstElement"});
                     // В HashSet допустимы только уникальные элементы, 
                     // поэтому, несмотря на два вызова Add с "firstElement", 
                     // размер HashSet должен быть равен 1.
-                    if ((int)constructedType.GetProperty("Count").GetValue(setInstance) != 1)
+                    if ((int) constructedType.GetProperty("Count").GetValue(setInstance) != 1)
                     {
                         throw new Exception(
                             $"Ошибка: ожидался размер 1, но получен размер {constructedType.GetProperty("Count").GetValue(setInstance)}");
@@ -121,12 +122,13 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     throw new Exception("Error");
                 }
-                // if (constructedType != null)
-                // {
-                //     var listInstance = Activator.CreateInstance(constructedType);
-                //     constructedType.GetMethod("Add").Invoke(listInstance, new Object[]{"firstElement"});
-                //     constructedType.GetMethod("Add").Invoke(listInstance, new Object[]{"secondElement"});
-                // }
+
+                if (constructedType != null)
+                {
+                    var listInstance = Activator.CreateInstance(constructedType);
+                    constructedType.GetMethod("Add").Invoke(listInstance, new Object[] {"firstElement"});
+                    constructedType.GetMethod("Add").Invoke(listInstance, new Object[] {"secondElement"});
+                }
             }
             catch (ArgumentException e)
             {
@@ -159,19 +161,19 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     throw new Exception("Error");
                 }
-                // if (constructedType != null)
-                // {
-                //     var queueInstance = Activator.CreateInstance(constructedType);
-                //     constructedType.GetMethod("Enqueue").Invoke(queueInstance, new Object[]{"firstElement"});
-                //     constructedType.GetMethod("Enqueue").Invoke(queueInstance, new Object[]{"secondElement"});
 
-                //     // Первый добавленный элемент должен быть первым удаленным в очереди.
-                //     var firstElement = constructedType.GetMethod("Dequeue").Invoke(queueInstance, null);
-                //     if (!"firstElement".Equals(firstElement))
-                //     {
-                //         throw new Exception($"Ошибка: ожидался элемент 'firstElement', но получен {firstElement}");
-                //     }
-                // }
+                if (constructedType != null)
+                {
+                    var queueInstance = Activator.CreateInstance(constructedType);
+                    constructedType.GetMethod("Enqueue").Invoke(queueInstance, new Object[] {"firstElement"});
+                    constructedType.GetMethod("Enqueue").Invoke(queueInstance, new Object[] {"secondElement"});
+                    // Первый добавленный элемент должен быть первым удаленным в очереди.
+                    var firstElement = constructedType.GetMethod("Dequeue").Invoke(queueInstance, null);
+                    if (!"firstElement".Equals(firstElement))
+                    {
+                        throw new Exception($"Ошибка: ожидался элемент 'firstElement', но получен {firstElement}");
+                    }
+                }
             }
             catch (ArgumentException e)
             {
@@ -204,25 +206,26 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     throw new Exception("Error");
                 }
-                // if (constructedType != null)
-                // {
-                //     var stackInstance = Activator.CreateInstance(constructedType);
-                //     constructedType.GetMethod("Push").Invoke(stackInstance, new Object[]{"firstElement"});
-                //     constructedType.GetMethod("Push").Invoke(stackInstance, new Object[]{"secondElement"});
 
-                //     // Последний добавленный элемент должен быть первым удаленным в стеке.
-                //     var lastElement = constructedType.GetMethod("Pop").Invoke(stackInstance, null);
-                //     if (!"secondElement".Equals(lastElement))
-                //     {
-                //         throw new Exception($"Ошибка: ожидался элемент 'secondElement', но получен {lastElement}");
-                //     }
+                if (constructedType != null)
+                {
+                    var stackInstance = Activator.CreateInstance(constructedType);
+                    constructedType.GetMethod("Push").Invoke(stackInstance, new Object[] {"firstElement"});
+                    constructedType.GetMethod("Push").Invoke(stackInstance, new Object[] {"secondElement"});
 
-                //     var firstElement = constructedType.GetMethod("Pop").Invoke(stackInstance, null);
-                //     if (!"firstElement".Equals(firstElement))
-                //     {
-                //         throw new Exception($"Ошибка: ожидался элемент 'firstElement', но получен {firstElement}");
-                //     }
-                // }
+                    // Последний добавленный элемент должен быть первым удаленным в стеке.
+                    var lastElement = constructedType.GetMethod("Pop").Invoke(stackInstance, null);
+                    if (!"secondElement".Equals(lastElement))
+                    {
+                        throw new Exception($"Ошибка: ожидался элемент 'secondElement', но получен {lastElement}");
+                    }
+
+                    var firstElement = constructedType.GetMethod("Pop").Invoke(stackInstance, null);
+                    if (!"firstElement".Equals(firstElement))
+                    {
+                        throw new Exception($"Ошибка: ожидался элемент 'firstElement', но получен {firstElement}");
+                    }
+                }
             }
             catch (ArgumentException e)
             {
@@ -254,30 +257,26 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     throw new Exception("Error");
                 }
-                // if (constructedType != null)
-                // {
-                //     var sortedListInstance = Activator.CreateInstance(constructedType);
 
-                //     // Add elements
-                //     constructedType.GetMethod("Add").Invoke(sortedListInstance, new Object[]{"firstKey", "firstValue"});
-                //     constructedType.GetMethod("Add").Invoke(sortedListInstance, new Object[]{"secondKey", "secondValue"});
+                if (constructedType != null)
+                {
+                    var sortedListInstance = Activator.CreateInstance(constructedType);
 
-                //     // Remove an element
-                //     var removeResult = constructedType.GetMethod("Remove").Invoke(sortedListInstance, new Object[]{"firstKey"});
+                    // Add elements
+                    constructedType.GetMethod("Add")
+                        .Invoke(sortedListInstance, new Object[] {"firstKey", "firstValue"});
+                    constructedType.GetMethod("Add")
+                        .Invoke(sortedListInstance, new Object[] {"secondKey", "secondValue"});
 
-                //     if ((bool)removeResult == false)
-                //     {
-                //         throw new Exception("Error: Unable to remove an element.");
-                //     }
+                    // Remove an element
+                    var removeResult = constructedType.GetMethod("Remove")
+                        .Invoke(sortedListInstance, new Object[] {"firstKey"});
 
-                //     // Get value
-                //     var getValueResult = constructedType.GetMethod("GetValueOrDefault").Invoke(sortedListInstance, new Object[]{"secondKey"});
-
-                //     if ((string)getValueResult != "secondValue")
-                //     {
-                //         throw new Exception($"Error: The value returned was not correct. Expected: 'secondValue', Actual: '{getValueResult}'");
-                //     }
-                // }
+                    if ((bool) removeResult == false)
+                    {
+                        throw new Exception("Error: Unable to remove an element.");
+                    }
+                }
             }
             catch (ArgumentException e)
             {
@@ -310,28 +309,15 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     throw new Exception("Error");
                 }
-                // if (constructedType != null)
-                // {
-                //     var observableCollectionInstance = Activator.CreateInstance(constructedType);
 
-                //     // Add element
-                //     constructedType.GetMethod("Add").Invoke(observableCollectionInstance, new Object[]{"firstValue"});
+                if (constructedType != null)
+                {
+                    var observableCollectionInstance = Activator.CreateInstance(constructedType);
 
-                //     // Remove an element
-                //     var removeResult = constructedType.GetMethod("Remove").Invoke(observableCollectionInstance, new Object[]{"firstValue"});
-
-                //     if ((bool)removeResult == false)
-                //     {
-                //         throw new Exception("Error: Unable to remove an element.");
-                //     }
-
-                //     // Check count property
-                //     var countProperty = constructedType.GetProperty("Count");
-                //     if ((int)countProperty.GetValue(observableCollectionInstance) != 0)
-                //     {
-                //         throw new Exception($"Error: The count property returned incorrect value. Expected: 0, Actual: {(int)countProperty.GetValue(observableCollectionInstance)}");
-                //     }
-                // }
+                    // Add element
+                    constructedType.GetMethod("Insert")
+                        .Invoke(observableCollectionInstance, new Object[] {0, "firstValue"});
+                }
             }
             catch (ArgumentException e)
             {
@@ -369,14 +355,14 @@ namespace OnlineCompiler.Server.Controllers
                 {
                     var listInstance = Activator.CreateInstance(constructedType);
                     // В классе два метода AddLast (см. код), есть ещё похожие методы и нужно конкретно выбирать, что вызвать
-                    var addLastMethod =  constructedType
+                    var addLastMethod = constructedType
                         .GetMethods()
                         .First(mi => mi.Name == "AddLast" && mi.ReturnType != typeof(void));
-                    addLastMethod.Invoke(listInstance,new object[]{ "firstElement" });
-                    addLastMethod.Invoke(listInstance, new object[]{ "secondElement" });
+                    addLastMethod.Invoke(listInstance, new object[] {"firstElement"});
+                    addLastMethod.Invoke(listInstance, new object[] {"secondElement"});
 
                     // Проверяем подсчёт элементов.
-                    var count = (int)constructedType.GetProperty("Count").GetValue(listInstance);
+                    var count = (int) constructedType.GetProperty("Count").GetValue(listInstance);
                     if (count != 2)
                     {
                         throw new Exception($"Ошибка: ожидалось 2 элемента, но получено {count}");

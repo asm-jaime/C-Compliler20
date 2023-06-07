@@ -3,179 +3,156 @@ namespace OnlineCompiler.Client.Pages;
 public static class TemplateQueue
 {
     public static string QueueCode = @"
-    // Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
-/*=============================================================================
-**
-**
-** Purpose: An array implementation of a generic stack.
-**
-**
-=============================================================================*/
-
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace System.Collections.Generic
 {
-    public class MyICollectionDebugView<T>
+    public class Queue<T> : IReadOnlyCollection<T>
     {
-        private readonly ICollection<T> collection;
+        private T[] _array;
+        private int _head; // The index from which to dequeue if the queue isn't empty.
+        private int _tail; // The index at which to enqueue if the queue isn't full.
+        private int _size; // Number of elements.
+        private int _version;
 
-        public MyICollectionDebugView(ICollection<T> collection)
-        {
-            this.collection = collection;
-        }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public T[] Items
-        {
-            get
-            {
-                T[] items = new T[collection.Count];
-                collection.CopyTo(items, 0);
-                return items;
-            }
-        }
-    }
-    [DebuggerTypeProxy(typeof(MyICollectionDebugView<>))]
-
-    [Serializable]
-
-    public class Stack<T> : IEnumerable<T>,
-        System.Collections.ICollection,
-        IReadOnlyCollection<T>
-    {
-        private T[] _array; // Storage for stack elements. Do not rename (binary serialization)
-        private int _size; // Number of items in the stack. Do not rename (binary serialization)
-        private int _version; // Used to keep enumerator in sync w/ collection. Do not rename (binary serialization)
-
-        private const int DefaultCapacity = 4;
-
-        public Stack()
+        // Creates a queue with room for capacity objects. The default initial
+        // capacity and grow factor are used.
+        public Queue()
         {
             _array = Array.Empty<T>();
         }
 
-        // Create a stack with a specific initial capacity.  The initial capacity
-        // must be a non-negative number.
-        public Stack(int capacity)
+        // Creates a queue with room for capacity objects. The default grow factor
+        // is used.
+        public Queue(int capacity)
         {
             if (capacity < 0)
-                throw new InvalidOperationException();
+                throw new ArgumentOutOfRangeException();
             _array = new T[capacity];
         }
 
-        // Fills a Stack with the contents of a particular collection.  The items are
-        // pushed onto the stack in the same order they are read by the enumerator.
+        // Fills a Queue with the elements of an ICollection.  Uses the enumerator
+        // to get each of the elements.
+        public Queue(IEnumerable<T> collection)
+        {
+            if (collection == null)
+                throw new ArgumentNullException(nameof(collection));
 
+            _array = ToArray(collection, out _size);
+            if (_size != _array.Length) _tail = _size;
+        }
 
         public int Count
         {
             get { return _size; }
         }
 
-        bool ICollection.IsSynchronized
-        {
-            get { return false; }
-        }
-
-        object ICollection.SyncRoot => this;
-
-        // Removes all Objects from the Stack.
+        // Removes all Objects from the queue.
         public void Clear()
         {
-            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            if (_size != 0)
             {
-                Array.Clear(_array, 0, _size); 
+                if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+                {
+                    if (_head < _tail)
+                    {
+                        Array.Clear(_array, _head, _size);
+                    }
+                    else
+                    {
+                        Array.Clear(_array, _head, _array.Length - _head);
+                        Array.Clear(_array, 0, _tail);
+                    }
+                }
+
+                _size = 0;
             }
-            _size = 0;
+
+            _head = 0;
+            _tail = 0;
             _version++;
         }
 
-        public bool Contains(T item)
+        // Adds item to the tail of the queue.
+        public void Enqueue(T item)
         {
-            // Compare items using the default equality comparer
+            if (_size == _array.Length)
+            {
+                Grow(_size + 1);
+            }
 
-            // PERF: Internally Array.LastIndexOf calls
-            // EqualityComparer<T>.Default.LastIndexOf, which
-            // is specialized for different types. This
-            // boosts performance since instead of making a
-            // virtual method call each iteration of the loop,
-            // via EqualityComparer<T>.Default.Equals, we
-            // only make one virtual call to EqualityComparer.LastIndexOf.
-
-            return _size != 0 && Array.LastIndexOf(_array, item, _size - 1) != -1;
+            _array[_tail] = item;
+            MoveNext(ref _tail);
+            _size++;
+            _version++;
         }
 
-        // Copies the stack into an array.
-        public void CopyTo(T[] array, int arrayIndex)
+        internal static T[] ToArray<T>(IEnumerable<T> source, out int length)
         {
-            if (array == null)
+            if (source is ICollection<T> ic)
             {
-                throw new InvalidOperationException();
+                int count = ic.Count;
+                if (count != 0)
+                {
+                    // Allocate an array of the desired size, then copy the elements into it. Note that this has the same
+                    // issue regarding concurrency as other existing collections like List<T>. If the collection size
+                    // concurrently changes between the array allocation and the CopyTo, we could end up either getting an
+                    // exception from overrunning the array (if the size went up) or we could end up not filling as many
+                    // items as 'count' suggests (if the size went down).  This is only an issue for concurrent collections
+                    // that implement ICollection<T>, which as of .NET 4.6 is just ConcurrentDictionary<TKey, TValue>.
+                    T[] arr = new T[count];
+                    ic.CopyTo(arr, 0);
+                    length = count;
+                    return arr;
+                }
+            }
+            else
+            {
+                using (var en = source.GetEnumerator())
+                {
+                    if (en.MoveNext())
+                    {
+                        const int DefaultCapacity = 4;
+                        T[] arr = new T[DefaultCapacity];
+                        arr[0] = en.Current;
+                        int count = 1;
+
+                        while (en.MoveNext())
+                        {
+                            if (count == arr.Length)
+                            {
+                                // This is the same growth logic as in List<T>:
+                                // If the array is currently empty, we make it a default size.  Otherwise, we attempt to
+                                // double the size of the array.  Doubling will overflow once the size of the array reaches
+                                // 2^30, since doubling to 2^31 is 1 larger than Int32.MaxValue.  In that case, we instead
+                                // constrain the length to be Array.MaxLength (this overflow check works because of the
+                                // cast to uint).
+                                int newLength = count << 1;
+                                if ((uint) newLength > Array.MaxLength)
+                                {
+                                    newLength = Array.MaxLength <= count ? count + 1 : Array.MaxLength;
+                                }
+
+                                Array.Resize(ref arr, newLength);
+                            }
+
+                            arr[count++] = en.Current;
+                        }
+
+                        length = count;
+                        return arr;
+                    }
+                }
             }
 
-            if (arrayIndex < 0 || arrayIndex > array.Length)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (array.Length - arrayIndex < _size)
-            {
-                throw new InvalidOperationException();
-            }
-
-            Debug.Assert(array != _array);
-            int srcIndex = 0;
-            int dstIndex = arrayIndex + _size;
-            while (srcIndex < _size)
-            {
-                array[--dstIndex] = _array[srcIndex++];
-            }
+            length = 0;
+            return Array.Empty<T>();
         }
 
-        void ICollection.CopyTo(Array array, int arrayIndex)
-        {
-            if (array == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (array.Rank != 1)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (array.GetLowerBound(0) != 0)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (arrayIndex < 0 || arrayIndex > array.Length)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (array.Length - arrayIndex < _size)
-            {
-                throw new InvalidOperationException();
-            }
-
-            try
-            {
-                Array.Copy(_array, 0, array, arrayIndex, _size);
-                Array.Reverse(array, arrayIndex, _size);
-            }
-            catch (ArrayTypeMismatchException)
-            {
-                throw new InvalidOperationException();
-            }
-        }
-
-        // Returns an IEnumerator for this Stack.
+        // GetEnumerator returns an IEnumerator over this Queue.  This
+        // Enumerator will support removing.
         public Enumerator GetEnumerator()
         {
             return new Enumerator(this);
@@ -192,184 +169,245 @@ namespace System.Collections.Generic
             return new Enumerator(this);
         }
 
-        public void TrimExcess()
+        // Removes the object at the head of the queue and returns it. If the queue
+        // is empty, this method throws an
+        // InvalidOperationException.
+        public T Dequeue()
         {
-            int threshold = (int)(((double)_array.Length) * 0.9);
-            if (_size < threshold)
-            {
-                Array.Resize(ref _array, _size);
-                _version++;
-            }
-        }
-
-        // Returns the top object on the stack without removing it.  If the stack
-        // is empty, Peek throws an InvalidOperationException.
-        public T Peek()
-        {
-            int size = _size - 1;
+            int head = _head;
             T[] array = _array;
 
-            if ((uint)size >= (uint)array.Length)
+            if (_size == 0)
             {
-                ThrowForEmptyStack();
+                ThrowForEmptyQueue();
             }
 
-            return array[size];
+            T removed = array[head];
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            {
+                array[head] = default!;
+            }
+
+            MoveNext(ref _head);
+            _size--;
+            _version++;
+            return removed;
+        }
+
+        public bool TryDequeue([MaybeNullWhen(false)] out T result)
+        {
+            int head = _head;
+            T[] array = _array;
+
+            if (_size == 0)
+            {
+                result = default!;
+                return false;
+            }
+
+            result = array[head];
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            {
+                array[head] = default!;
+            }
+
+            MoveNext(ref _head);
+            _size--;
+            _version++;
+            return true;
+        }
+
+        // Returns the object at the head of the queue. The object remains in the
+        // queue. If the queue is empty, this method throws an
+        // InvalidOperationException.
+        public T Peek()
+        {
+            if (_size == 0)
+            {
+                ThrowForEmptyQueue();
+            }
+
+            return _array[_head];
         }
 
         public bool TryPeek([MaybeNullWhen(false)] out T result)
         {
-            int size = _size - 1;
-            T[] array = _array;
-
-            if ((uint)size >= (uint)array.Length)
-            {
-                result = default!;
-                return false;
-            }
-            result = array[size];
-            return true;
-        }
-
-        // Pops an item from the top of the stack.  If the stack is empty, Pop
-        // throws an InvalidOperationException.
-        public T Pop()
-        {
-            int size = _size - 1;
-            T[] array = _array;
-
-            // if (_size == 0) is equivalent to if (size == -1), and this case
-            // is covered with (uint)size, thus allowing bounds check elimination
-            // https://github.com/dotnet/coreclr/pull/9773
-            if ((uint)size >= (uint)array.Length)
-            {
-                ThrowForEmptyStack();
-            }
-
-            _version++;
-            _size = size;
-            T item = array[size];
-            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            {
-                array[size] = default!;     // Free memory quicker.
-            }
-            return item;
-        }
-
-        public bool TryPop([MaybeNullWhen(false)] out T result)
-        {
-            int size = _size - 1;
-            T[] array = _array;
-
-            if ((uint)size >= (uint)array.Length)
+            if (_size == 0)
             {
                 result = default!;
                 return false;
             }
 
-            _version++;
-            _size = size;
-            result = array[size];
-            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            {
-                array[size] = default!;
-            }
+            result = _array[_head];
             return true;
         }
 
-        // Pushes an item to the top of the stack.
-        public void Push(T item)
-        {
-            int size = _size;
-            T[] array = _array;
-
-            if ((uint)size < (uint)array.Length)
-            {
-                array[size] = item;
-                _version++;
-                _size = size + 1;
-            }
-            else
-            {
-                PushWithResize(item);
-            }
-        }
-
-        // Non-inline from Stack.Push to improve its code quality as uncommon path
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private void PushWithResize(T item)
-        {
-            Array.Resize(ref _array, (_array.Length == 0) ? DefaultCapacity : 2 * _array.Length);
-            _array[_size] = item;
-            _version++;
-            _size++;
-        }
-
-        // Copies the Stack to an array, in the same order Pop would return the items.
-        public T[] ToArray()
+        // Returns true if the queue contains at least one object equal to item.
+        // Equality is determined using EqualityComparer<T>.Default.Equals().
+        public bool Contains(T item)
         {
             if (_size == 0)
-                return Array.Empty<T>();
-
-            T[] objArray = new T[_size];
-            int i = 0;
-            while (i < _size)
             {
-                objArray[i] = _array[_size - i - 1];
-                i++;
+                return false;
             }
-            return objArray;
+
+            if (_head < _tail)
+            {
+                return Array.IndexOf(_array, item, _head, _size) >= 0;
+            }
+
+            // We've wrapped around. Check both partitions, the least recently enqueued first.
+            return
+                Array.IndexOf(_array, item, _head, _array.Length - _head) >= 0 ||
+                Array.IndexOf(_array, item, 0, _tail) >= 0;
+        }
+        
+
+        // PRIVATE Grows or shrinks the buffer to hold capacity objects. Capacity
+        // must be >= _size.
+        private void SetCapacity(int capacity)
+        {
+            T[] newarray = new T[capacity];
+            if (_size > 0)
+            {
+                if (_head < _tail)
+                {
+                    Array.Copy(_array, _head, newarray, 0, _size);
+                }
+                else
+                {
+                    Array.Copy(_array, _head, newarray, 0, _array.Length - _head);
+                    Array.Copy(_array, 0, newarray, _array.Length - _head, _tail);
+                }
+            }
+
+            _array = newarray;
+            _head = 0;
+            _tail = (_size == capacity) ? 0 : _size;
+            _version++;
         }
 
-        private void ThrowForEmptyStack()
+        // Increments the index wrapping it if necessary.
+        private void MoveNext(ref int index)
+        {
+            // It is tempting to use the remainder operator here but it is actually much slower
+            // than a simple comparison and a rarely taken branch.
+            // JIT produces better code than with ternary operator ?:
+            int tmp = index + 1;
+            if (tmp == _array.Length)
+            {
+                tmp = 0;
+            }
+
+            index = tmp;
+        }
+
+        private void ThrowForEmptyQueue()
         {
             Debug.Assert(_size == 0);
             throw new InvalidOperationException();
         }
 
-        public struct Enumerator : IEnumerator<T>, System.Collections.IEnumerator
+        public int EnsureCapacity(int capacity)
         {
-            private readonly Stack<T> _stack;
+            if (capacity < 0)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
+            if (_array.Length < capacity)
+            {
+                Grow(capacity);
+            }
+
+            return _array.Length;
+        }
+
+        private void Grow(int capacity)
+        {
+
+            const int GrowFactor = 2;
+            const int MinimumGrow = 4;
+
+            int newcapacity = GrowFactor * _array.Length;
+
+            // Allow the list to grow to maximum possible capacity (~2G elements) before encountering overflow.
+            // Note that this check works even when _items.Length overflowed thanks to the (uint) cast
+            if ((uint) newcapacity > Array.MaxLength) newcapacity = Array.MaxLength;
+
+            // Ensure minimum growth is respected.
+            newcapacity = Math.Max(newcapacity, _array.Length + MinimumGrow);
+
+            // If the computed capacity is still less than specified, set to the original argument.
+            // Capacities exceeding Array.MaxLength will be surfaced as OutOfMemoryException by Array.Resize.
+            if (newcapacity < capacity) newcapacity = capacity;
+
+            SetCapacity(newcapacity);
+        }
+
+        // Implements an enumerator for a Queue.  The enumerator uses the
+        // internal version number of the list to ensure that no modifications are
+        // made to the list while an enumeration is in progress.
+        public struct Enumerator : IEnumerator<T>,
+            System.Collections.IEnumerator
+        {
+            private readonly Queue<T> _q;
             private readonly int _version;
-            private int _index;
+            private int _index; // -1 = not started, -2 = ended/disposed
             private T? _currentElement;
 
-            internal Enumerator(Stack<T> stack)
+            internal Enumerator(Queue<T> q)
             {
-                _stack = stack;
-                _version = stack._version;
-                _index = -2;
+                _q = q;
+                _version = q._version;
+                _index = -1;
                 _currentElement = default;
             }
 
             public void Dispose()
             {
-                _index = -1;
+                _index = -2;
+                _currentElement = default;
             }
 
             public bool MoveNext()
             {
-                bool retval;
-                if (_version != _stack._version) throw new InvalidOperationException();
+                if (_version != _q._version) throw new InvalidOperationException();
+
                 if (_index == -2)
-                {  // First call to enumerator.
-                    _index = _stack._size - 1;
-                    retval = (_index >= 0);
-                    if (retval)
-                        _currentElement = _stack._array[_index];
-                    return retval;
-                }
-                if (_index == -1)
-                {  // End of enumeration.
+                    return false;
+
+                _index++;
+
+                if (_index == _q._size)
+                {
+                    // We've run past the last element
+                    _index = -2;
+                    _currentElement = default;
                     return false;
                 }
 
-                retval = (--_index >= 0);
-                if (retval)
-                    _currentElement = _stack._array[_index];
-                else
-                    _currentElement = default;
-                return retval;
+                // Cache some fields in locals to decrease code size
+                T[] array = _q._array;
+                int capacity = array.Length;
+
+                // _index represents the 0-based index into the queue, however the queue
+                // doesn't have to start from 0 and it may not even be stored contiguously in memory.
+
+                int arrayIndex = _q._head + _index; // this is the actual index into the queue's backing array
+                if (arrayIndex >= capacity)
+                {
+                    // NOTE: Originally we were using the modulo operator here, however
+                    // on Intel processors it has a very high instruction latency which
+                    // was slowing down the loop quite a bit.
+                    // Replacing it with simple comparison/subtraction operations sped up
+                    // the average foreach loop by 2x.
+
+                    arrayIndex -= capacity; // wrap around if needed
+                }
+
+                _currentElement = array[arrayIndex];
+                return true;
             }
 
             public T Current
@@ -388,22 +426,20 @@ namespace System.Collections.Generic
                 throw new InvalidOperationException();
             }
 
-            object? System.Collections.IEnumerator.Current
+            object? IEnumerator.Current
             {
                 get { return Current; }
             }
 
             void IEnumerator.Reset()
             {
-                if (_version != _stack._version) throw new InvalidOperationException();
-                _index = -2;
+                if (_version != _q._version) throw new InvalidOperationException();
+                _index = -1;
                 _currentElement = default;
             }
         }
     }
-}
-
- 
+} 
 ";
 
     public static string UserQueueCode = @"

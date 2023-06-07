@@ -3,36 +3,10 @@ namespace OnlineCompiler.Client.Pages;
 public static class TemplateSortedList
 {
     public static string SortedListCode=@"
-    // Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
+    using System.Runtime.CompilerServices;
 
 namespace System.Collections.Generic
 {
-    public class MyICollectionDebugView<T>
-    {
-        private readonly ICollection<T> collection;
-
-        public MyICollectionDebugView(ICollection<T> collection)
-        {
-            this.collection = collection;
-        }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public T[] Items
-        {
-            get
-            {
-                T[] items = new T[collection.Count];
-                collection.CopyTo(items, 0);
-                return items;
-            }
-        }
-    }
-    [DebuggerTypeProxy(typeof(MyICollectionDebugView<>))]
     public class SortedList<TKey, TValue> :
         IDictionary<TKey, TValue>, IDictionary, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
     {
@@ -141,7 +115,6 @@ namespace System.Collections.Generic
                 TKey[] keys = this.keys;
                 dictionary.Keys.CopyTo(keys, 0);
                 dictionary.Values.CopyTo(values, 0);
-                Debug.Assert(count == this.keys.Length);
                 if (count > 1)
                 {
                     comparer = Comparer; // obtain default if this is null.
@@ -658,7 +631,7 @@ namespace System.Collections.Generic
             version++;
         }
 
-        public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
+        public bool TryGetValue(TKey key, out TValue value)
         {
             int i = IndexOfKey(key);
             if (i >= 0)
@@ -710,23 +683,6 @@ namespace System.Collections.Generic
             if (IsCompatibleKey(key))
             {
                 Remove((TKey)key);
-            }
-        }
-
-        // Sets the capacity of this sorted list to the size of the sorted list.
-        // This method can be used to minimize a sorted list's memory overhead once
-        // it is known that no new elements will be added to the sorted list. To
-        // completely clear a sorted list and release all memory referenced by the
-        // sorted list, execute the following statements:
-        //
-        // SortedList.Clear();
-        // SortedList.TrimExcess();
-        public void TrimExcess()
-        {
-            int threshold = (int)(((double)keys.Length) * 0.9);
-            if (_size < threshold)
-            {
-                Capacity = _size;
             }
         }
 
@@ -1217,7 +1173,6 @@ namespace System.Collections.Generic
         }
     }
 }
-
 ";
     
     public static string UserSortedListCode=@"
