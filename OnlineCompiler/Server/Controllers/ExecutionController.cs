@@ -28,6 +28,7 @@ namespace OnlineCompiler.Server.Controllers
         [Route("Dictionary")]
         public ExecutionInfo Post([FromBody] string? code)
         {
+            var hints = new List<string>();
             if (code == null)
                 return null;
             try
@@ -41,22 +42,27 @@ namespace OnlineCompiler.Server.Controllers
 
                 if (constructedType != null)
                 {
-                    var carInstance = Activator.CreateInstance(constructedType);
-                    constructedType.GetMethod("Add").Invoke(carInstance, new Object[] {"suka", "suk"});
-                    constructedType.GetMethod("Add").Invoke(carInstance, new Object[] {"wtf", "wtf1"});
+                    HintReflectionHelper.GetReflectionHints(code, constructedType, hints);
+                    //Добавить сюда тест кейсы на методы Add, Remove, Find
+                    /*var instance = Activator.CreateInstance(constructedType);
+                     constructedType.GetMethod("Add").Invoke(instance, new Object[] {"suka", "suk"});
+                     constructedType.GetMethod("Add").Invoke(instance, new Object[] {"wtf", "wtf1"});*/
                 }
             }
             catch (ArgumentException e)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, e.Message);
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError,
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
+
+            return hints.Count > 0
+                ? new ExecutionInfo(ExecutionInfo.ExecutionStatus.WithWarning, 111, "", hints)
+                : new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
         }
 
         [HttpPost]
@@ -94,15 +100,15 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (ArgumentException e)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, e.Message);
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError,
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
         }
 
 
@@ -133,15 +139,15 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (ArgumentException e)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, e.Message);
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError,
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
         }
 
 
@@ -178,15 +184,15 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (ArgumentException e)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, e.Message);
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError,
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
         }
 
 
@@ -230,15 +236,15 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (ArgumentException e)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, e.Message);
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError,
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
         }
 
         [HttpPost]
@@ -281,15 +287,15 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (ArgumentException e)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, e.Message);
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError,
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
         }
 
 
@@ -322,15 +328,15 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (ArgumentException e)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, e.Message);
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError,
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
         }
 
 
@@ -372,15 +378,15 @@ namespace OnlineCompiler.Server.Controllers
             }
             catch (ArgumentException e)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 242, e.Message);
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, e.Message);
             }
             catch (Exception ex)
             {
-                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError, 0,
+                return new ExecutionInfo(ExecutionInfo.ExecutionStatus.CompilationError,
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "");
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
         }
 
         /// <summary>

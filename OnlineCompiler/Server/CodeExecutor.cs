@@ -93,7 +93,7 @@ namespace OnlineCompiler.Server
             {
                 if (SandBox == null)
                     return null;
-                return new ExecutionInfo(Status, _CompilerTime, _OutputOverride ?? SandBox.Output);
+                return new ExecutionInfo(Status, _CompilerTime, _OutputOverride ?? SandBox.Output, new List<string>());
             }
         }
     }

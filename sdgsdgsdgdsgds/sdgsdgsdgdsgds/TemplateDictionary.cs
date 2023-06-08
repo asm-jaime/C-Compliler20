@@ -1776,7 +1776,6 @@ public class Dictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, 
         private ref TValue FindValue(TKey key)
         {
             //Нужна реализация
-            throw new NotImplementedException();
         }
         
         private static int GetPrime(int min)
@@ -1863,7 +1862,6 @@ public class Dictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, 
         private bool TryInsert(TKey key, TValue value, InsertionBehavior behavior)
         {
             //Нужна реализация
-            throw new NotImplementedException();
         }
 
         private void Resize() => Resize(ExpandPrime(_count), false);
@@ -1912,7 +1910,6 @@ public class Dictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, 
         public bool Remove(TKey key)
         {
             //Нужна реализация
-            throw new NotImplementedException();
         }
 
         public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)

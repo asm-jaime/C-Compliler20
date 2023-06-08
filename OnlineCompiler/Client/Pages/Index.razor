@@ -93,7 +93,7 @@
             if (response != null && response.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 ExecutionId = await response.Content.ReadAsStringAsync();
-                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing);
+                ExecutionInfo = new ExecutionInfo(ExecutionInfo.ExecutionStatus.Preparing, "");
                 StateHasChanged();
                 await StatusUpdateLoop();
             }
