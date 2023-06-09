@@ -120,6 +120,7 @@ namespace OnlineCompiler.Server.Controllers
         [Route("List")]
         public ExecutionInfo PostList([FromBody] string? code)
         {
+            var hints = new List<string>();
             if (code == null)
             {
                 return null;
@@ -136,9 +137,11 @@ namespace OnlineCompiler.Server.Controllers
 
                 if (constructedType != null)
                 {
-                    var listInstance = Activator.CreateInstance(constructedType);
+                    HintReflectionHelper.GetReflectionHintsList(code, constructedType, hints);
+                    //Тестировать Add, Remove, Find
+                    /*var listInstance = Activator.CreateInstance(constructedType);
                     constructedType.GetMethod("Add").Invoke(listInstance, new Object[] {"firstElement"});
-                    constructedType.GetMethod("Add").Invoke(listInstance, new Object[] {"secondElement"});
+                    constructedType.GetMethod("Add").Invoke(listInstance, new Object[] {"secondElement"});*/
                 }
             }
             catch (ArgumentException e)
@@ -151,7 +154,7 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
         }
 
 

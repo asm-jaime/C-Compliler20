@@ -2,8 +2,8 @@
 using OnlineCompiler.Client.Pages;
 using sdgsdgsdgdsgds;
 
-var code = TemplateLinkedList.LinkedListCode;
-var dicType = DynamicClassCreator.CreateClassFromCode(code, "LinkedList");
+var code = TemplateList.ListCode;
+var dicType = DynamicClassCreator.CreateClassFromCode(code, "List");
 Type constructedType = dicType.MakeGenericType(typeof(string));
 if (constructedType == null)
 {
@@ -14,135 +14,85 @@ if (constructedType != null)
 {
     var hints = new List<string>();
     //AddTest
-    var addFirstMethod = constructedType
-        .GetMethods()
-        .First(mi => mi.Name == "AddFirst" && mi.ReturnType != typeof(void));
+    var addFirstMethod = constructedType.GetMethod("Add");
     var insertBody = addFirstMethod.GetMethodBody().LocalVariables;
     if (!insertBody.Any(x =>
-            x.LocalType.ToString().Contains("System.Collections.Generic.LinkedListNode`1[System.String]")))
+            x.LocalType.ToString().Contains("System.String[]")))
     {
-        hints.Add("Метод AddFirst: Попробуйте использовать LinkedListNode");
+        hints.Add("Метод Add: Рекомендуется использовать _items, присвоив значение в локальную переменную");
+    }
+    
+    if (!insertBody.Any(x =>
+            x.LocalType.ToString().Contains("System.Int32")))
+    {
+        hints.Add("Метод Add: Рекомендуется использовать _size, присвоив значение в локальную переменную");
     }
 
-    var userMethodCode = GetUserCode("public LinkedListNode<T> AddFirst(T value)",
-        "public void AddFirst(LinkedListNode<T> node)",
+    var userMethodCode = GetUserCode("public void Add(T item)",
+        "private void AddWithResize(T item)",
         code);
 
-    if (!userMethodCode.Contains("head == null") && !userMethodCode.Contains("head is null"))
+    if (!userMethodCode.Contains("uint"))
     {
-        hints.Add("Метод AddFirst: Добавьте проверку head на null");
+        hints.Add("Метод Add: Используйте каст к uint при сравнении size");
     }
 
-    if (!userMethodCode.Contains("InternalInsertNodeToEmptyList"))
+    if (!userMethodCode.Contains("_version"))
     {
-        hints.Add(
-            "Метод AddFirst: Попробуйте использовать InternalInsertNodeToEmptyList");
+        hints.Add("Метод Add: Обратите внимание на _version, необходимо увеличивать его значение");
     }
     
-    var addFirstMethod1 = constructedType
-        .GetMethods()
-        .First(mi => mi.Name == "AddBefore" && mi.ReturnType != typeof(void));
-    var insertBody1 = addFirstMethod1.GetMethodBody().LocalVariables;
-    
-    if (!insertBody1.Any(x =>
-            x.LocalType.ToString().Contains("System.Collections.Generic.LinkedListNode`1[System.String]")))
+    if (!userMethodCode.Contains("AddWithResize"))
     {
-        hints.Add("Метод AddBefore: Попробуйте использовать LinkedListNode");
+        hints.Add("Метод Add: При вставке элемента необходимо проверять _size и при необходимости вызывать метод AddWithResize()");
     }
     
-    var userMethodCode1 = GetUserCode("public LinkedListNode<T> AddBefore(LinkedListNode<T> node, T value)",
-        "public void AddBefore(LinkedListNode<T> node, LinkedListNode<T> newNode)",
-        code);
-    
-    if (!userMethodCode1.Contains("ValidateNode("))
-    {
-        hints.Add("Метод AddBefore: Добавьте проверку ValidateNode()");
-    }
-    if (!userMethodCode1.Contains("InternalInsertNodeBefore"))
-    {
-        hints.Add("Метод AddBefore: Попробуйте использовать InternalInsertNodeToEmptyList");
-    }
-    if (!userMethodCode1.Contains("node == head"))
-    {
-        hints.Add("Метод AddBefore: Добавьте проверку того, что node == head, с присвоением result к head");
-    }
-    
-    var addFirstMethod2 = constructedType
-        .GetMethods()
-        .First(mi => mi.Name == "AddAfter" && mi.ReturnType != typeof(void));
-    var insertBody2 = addFirstMethod2.GetMethodBody().LocalVariables;
-    if (!insertBody2.Any(x =>
-            x.LocalType.ToString().Contains("System.Collections.Generic.LinkedListNode")))
-    {
-        hints.Add("Метод AddAfter: Попробуйте использовать LinkedListNode");
-    }
-    var userMethodCode2 = GetUserCode("public LinkedListNode<T> AddAfter(LinkedListNode<T> node, T value)",
-        "public void AddAfter(LinkedListNode<T> node, LinkedListNode<T> newNode)",
-        code);
-    if (!userMethodCode2.Contains("ValidateNode("))
-    {
-        hints.Add("Метод AddAfter: Добавьте проверку ValidateNode() для node");
-    }
-    if (!userMethodCode2.Contains("InternalInsertNodeBefore"))
-    {
-        hints.Add("Метод AddAfter: Попробуйте использовать InternalInsertNodeToEmptyList");
-    }
     //Remove test
-    userMethodCode = GetUserCode("public bool Remove(T value)",
-        "public void Remove(LinkedListNode<T> node)", code);
+    userMethodCode = GetUserCode("public void RemoveAt(int index)",
+        "public struct Enumerator : IEnumerator<T>, IEnumerator", code);
 
-    if (!userMethodCode.Contains("Find("))
+    if (!userMethodCode.Contains("uint"))
     {
-        hints.Add("Метод Remove: Необходимо использовать метод Find() для значения value");
+        hints.Add("Метод RemoveAt: Используйте каст к uint при сравнении size и работой с index");
     }
 
-    if (!userMethodCode.Contains("InternalRemoveNode("))
+    if (!userMethodCode.Contains("Array.Copy"))
     {
-        hints.Add("Метод Remove: Добавьте использование метода InternalRemoveNode()");
+        hints.Add("Метод RemoveAt: Используйте Array.Copy, если index меньше _size");
     }
 
-    if (!userMethodCode.Contains("node != null") && !userMethodCode.Contains("node is not null"))
+    if (!userMethodCode.Contains("IsReferenceOrContainsReferences"))
     {
-        hints.Add("Метод Remove: Добавьте проверку node на null");
+        hints.Add("Метод RemoveAt: Попробуйте добавить использование RuntimeHelpers.IsReferenceOrContainsReferences");
+    }
+    
+    if (!userMethodCode.Contains("_version"))
+    {
+        hints.Add("Метод RemoveAt: Обратите внимание на _version, необходимо увеличивать его значение");
     }
 
     //FindTest
-    var findMethod = constructedType.GetMethod("Find");
+    userMethodCode = GetUserCode("public T? Find(Predicate<T> match)",
+        "public List<T> FindAll(Predicate<T> match)", code);
 
-    var findBody = findMethod.GetMethodBody().LocalVariables;
-
-    if (!findBody.Any(x => x.LocalType.ToString().Contains("System.Collections.Generic.LinkedListNode")))
+    if (!userMethodCode.Contains("match == null") && !userMethodCode.Contains("match is null"))
     {
-        hints.Add("Метод Find: Используйте LinkedListNode с присвоением в него head");
+        hints.Add("Метод Find: Обработайте случай, когда match равен null");
     }
 
-    if (!findBody.Any(x =>
-            x.LocalType.ToString().Contains("System.Collections.Generic.EqualityComparer`1[System.String]")))
+    if (!userMethodCode.Contains("_size"))
     {
-        hints.Add("Метод Find: Для значения comparer используйте EqualityComparer<T>.Default");
+        hints.Add("Метод Find: Для поиска значений рекомендуется использовать for с 0 элемента до _size");
     }
 
-    userMethodCode = GetUserCode("public LinkedListNode<T>? Find(T value)",
-        "public LinkedListNode<T>? FindLast(T value)", code);
-
-    if (!userMethodCode.Contains(".Equals("))
+    if (!userMethodCode.Contains("match("))
     {
-        hints.Add("Метод Find: Для сравнения значений value и node.item используйте Equals()");
+        hints.Add("Метод Find: Попробуйте использовать предикат match при работе с элементом List");
     }
 
-    if (!userMethodCode.Contains("return null"))
+    if (!userMethodCode.Contains("default"))
     {
-        hints.Add("Метод Find: Если значение не было найдено, возвращайте null");
-    }
-
-    if (!userMethodCode.Contains("node != null") && !userMethodCode.Contains("node is not null"))
-    {
-        hints.Add("Метод Find: Добавьте проверку node на null");
-    }
-
-    if (!userMethodCode.Contains(".next"))
-    {
-        hints.Add("Метод Find: Для обработки всех значений node воспользуйтесь node.next");
+        hints.Add("Метод Find: При отсутствии элемента, рекомендуется вернуть default");
     }
 }
 

@@ -63,6 +63,7 @@
       <workItem from="1686227383753" duration="12103000" />
       <workItem from="1686309933544" duration="1785000" />
       <workItem from="1686323723561" duration="7134000" />
+      <workItem from="1686343240466" duration="2700000" />
     </task>
     <servers />
   </component>
@@ -73,23 +74,6 @@
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="DotNet Breakpoints">
-          <url>file://$PROJECT_DIR$/sdgsdgsdgdsgds/Program.cs</url>
-          <line>111</line>
-          <properties documentPath="C:\Users\cat20\Desktop\CsharpCompiler\C-Compliler20\sdgsdgsdgdsgds\sdgsdgsdgdsgds\Program.cs" initialLine="111" containingFunctionPresentation="">
-            <startOffsets>
-              <option value="4160" />
-            </startOffsets>
-            <endOffsets>
-              <option value="4217" />
-            </endOffsets>
-          </properties>
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
     <watches-manager>
       <configuration name="DotNetProject">
         <watch expression="new System.Collections.Generic.ICollectionDebugView&lt;System.Reflection.LocalVariableInfo&gt;(insertBody).Items[11]" />
