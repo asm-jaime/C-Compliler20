@@ -348,6 +348,7 @@ namespace OnlineCompiler.Server.Controllers
         [Route("LinkedList")]
         public ExecutionInfo PostLinkedList([FromBody] string? code)
         {
+            var hint = new List<string>();
             if (code == null)
             {
                 return null;
@@ -364,7 +365,9 @@ namespace OnlineCompiler.Server.Controllers
 
                 if (constructedType != null)
                 {
-                    var listInstance = Activator.CreateInstance(constructedType);
+                    HintReflectionHelper.GetReflectionHintsLinkedList(code,constructedType,hint);
+                    //Протестировать методы AddLast, AddBefore, AddAfter, Remove, Find
+                    /*var listInstance = Activator.CreateInstance(constructedType);
                     // В классе два метода AddLast (см. код), есть ещё похожие методы и нужно конкретно выбирать, что вызвать
                     var addLastMethod = constructedType
                         .GetMethods()
@@ -377,7 +380,7 @@ namespace OnlineCompiler.Server.Controllers
                     if (count != 2)
                     {
                         throw new Exception($"Ошибка: ожидалось 2 элемента, но получено {count}");
-                    }
+                    }*/
                 }
             }
             catch (ArgumentException e)
@@ -390,7 +393,7 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hint);
         }
 
         /// <summary>
