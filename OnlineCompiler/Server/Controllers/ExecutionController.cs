@@ -162,6 +162,7 @@ namespace OnlineCompiler.Server.Controllers
         [Route("Queue")]
         public ExecutionInfo PostQueue([FromBody] string? code)
         {
+            var hints = new List<string>();
             if (code == null)
             {
                 return null;
@@ -178,7 +179,9 @@ namespace OnlineCompiler.Server.Controllers
 
                 if (constructedType != null)
                 {
-                    var queueInstance = Activator.CreateInstance(constructedType);
+                    HintReflectionHelper.GetReflectionHintQueue(code, constructedType, hints);
+                    //Тестировать методы Enqueue, Dequeue
+                    /*var queueInstance = Activator.CreateInstance(constructedType);
                     constructedType.GetMethod("Enqueue").Invoke(queueInstance, new Object[] {"firstElement"});
                     constructedType.GetMethod("Enqueue").Invoke(queueInstance, new Object[] {"secondElement"});
                     // Первый добавленный элемент должен быть первым удаленным в очереди.
@@ -186,7 +189,7 @@ namespace OnlineCompiler.Server.Controllers
                     if (!"firstElement".Equals(firstElement))
                     {
                         throw new Exception($"Ошибка: ожидался элемент 'firstElement', но получен {firstElement}");
-                    }
+                    }*/
                 }
             }
             catch (ArgumentException e)
@@ -199,7 +202,7 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
+            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
         }
 
 

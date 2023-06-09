@@ -2,8 +2,8 @@
 using OnlineCompiler.Client.Pages;
 using sdgsdgsdgdsgds;
 
-var code = TemplateList.ListCode;
-var dicType = DynamicClassCreator.CreateClassFromCode(code, "List");
+var code = TemplateQueue.QueueCode;
+var dicType = DynamicClassCreator.CreateClassFromCode(code, "Queue");
 Type constructedType = dicType.MakeGenericType(typeof(string));
 if (constructedType == null)
 {
@@ -14,62 +14,72 @@ if (constructedType != null)
 {
     var hints = new List<string>();
     //AddTest
-    var addFirstMethod = constructedType.GetMethod("Add");
-    var insertBody = addFirstMethod.GetMethodBody().LocalVariables;
+    /*var addFirstMethod = constructedType.GetMethod("Enqueue");*/
+    /*var insertBody = addFirstMethod.GetMethodBody().LocalVariables;
     if (!insertBody.Any(x =>
             x.LocalType.ToString().Contains("System.String[]")))
     {
         hints.Add("Метод Add: Рекомендуется использовать _items, присвоив значение в локальную переменную");
-    }
+    }*/
     
-    if (!insertBody.Any(x =>
+    /*if (!insertBody.Any(x =>
             x.LocalType.ToString().Contains("System.Int32")))
     {
         hints.Add("Метод Add: Рекомендуется использовать _size, присвоив значение в локальную переменную");
-    }
+    }*/
 
-    var userMethodCode = GetUserCode("public void Add(T item)",
-        "private void AddWithResize(T item)",
+    var userMethodCode = GetUserCode("public void Enqueue(T item)",
+        "internal static T[] ToArray<T>(IEnumerable<T> source, out int length)",
         code);
 
-    if (!userMethodCode.Contains("uint"))
+    if (!userMethodCode.Contains("_size"))
     {
-        hints.Add("Метод Add: Используйте каст к uint при сравнении size");
+        hints.Add("Метод Enqueue: Добавить проверку _size с длинной масива");
     }
 
-    if (!userMethodCode.Contains("_version"))
+    if (!userMethodCode.Contains("Grow("))
     {
-        hints.Add("Метод Add: Обратите внимание на _version, необходимо увеличивать его значение");
+        hints.Add("Метод Enqueue: Используйте Grow() для увеличения _size массива");
     }
     
-    if (!userMethodCode.Contains("AddWithResize"))
+    if (!userMethodCode.Contains("MoveNext("))
     {
-        hints.Add("Метод Add: При вставке элемента необходимо проверять _size и при необходимости вызывать метод AddWithResize()");
+        hints.Add("Метод Enqueue: Сместите указатель tail с помощью метода MoveNext(), используя ref");
     }
     
     //Remove test
-    userMethodCode = GetUserCode("public void RemoveAt(int index)",
-        "public struct Enumerator : IEnumerator<T>, IEnumerator", code);
-
-    if (!userMethodCode.Contains("uint"))
+    var removeMethod = constructedType.GetMethod("Dequeue");
+    var removeBOdy = removeMethod.GetMethodBody().LocalVariables;
+    if (!removeBOdy.Any(x =>
+            x.LocalType.ToString().Contains("System.String[]")))
     {
-        hints.Add("Метод RemoveAt: Используйте каст к uint при сравнении size и работой с index");
+        hints.Add("Метод Dequeue: Рекомендуется использовать _array, присвоив значение в локальную переменную");
     }
-
-    if (!userMethodCode.Contains("Array.Copy"))
+    
+    if (!removeBOdy.Any(x =>
+            x.LocalType.ToString().Contains("System.Int32")))
     {
-        hints.Add("Метод RemoveAt: Используйте Array.Copy, если index меньше _size");
+        hints.Add("Метод Dequeue: Рекомендуется использовать _head, присвоив значение в локальную переменную");
     }
+    
+    userMethodCode = GetUserCode("public T Dequeue()",
+        "public bool TryDequeue([MaybeNullWhen(false)] out T result)", code);
 
     if (!userMethodCode.Contains("IsReferenceOrContainsReferences"))
     {
-        hints.Add("Метод RemoveAt: Попробуйте добавить использование RuntimeHelpers.IsReferenceOrContainsReferences");
+        hints.Add("Метод Dequeue: Добавьте проверку RuntimeHelpers.IsReferenceOrContainsReferences");
+    }
+
+    if (!userMethodCode.Contains("ThrowForEmptyQueue"))
+    {
+        hints.Add("Метод Dequeue: При пустои queue рекомендуется использовать ThrowForEmptyQueue()");
+    }
+
+    if (!userMethodCode.Contains("MoveNext"))
+    {
+        hints.Add("Метод Dequeue: Сместите указатель _head при помощи MoveNext()");
     }
     
-    if (!userMethodCode.Contains("_version"))
-    {
-        hints.Add("Метод RemoveAt: Обратите внимание на _version, необходимо увеличивать его значение");
-    }
 
     //FindTest
     userMethodCode = GetUserCode("public T? Find(Predicate<T> match)",
