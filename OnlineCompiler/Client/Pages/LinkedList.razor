@@ -86,8 +86,21 @@
                 <label>@_loc["Finished"]</label>
                 break;
             }
+        case ExecutionInfo.ExecutionStatus.WithWarning:
+        {
+            <status-indicator positive />
+            <label>Выполнено с замечаниями</label>
+            break;
+        }
     }
     <br />
+    if (_executionInfo != null && _executionInfo.Hints.Count > 0)
+    {
+        @foreach (string line in _executionInfo.Hints)
+        {
+            <p>@line</p>
+        }
+    }
     if (OutputSplitByNewLines != null)
     {
         @foreach (string line in OutputSplitByNewLines)

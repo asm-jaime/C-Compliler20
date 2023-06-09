@@ -13,6 +13,7 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/efd3e9c4749621d4a53b45d7117d2a581e02a265c444a040f1387a155db/Dictionary.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/c6ad457575d35dcbff26c9a5e3fb1d92f1d3c55f25ef6ebf475367b5d8/List.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/de7cca8bbad440a84863dc9a66814897f9b51cd9916dcdce4857992d5d492c/HashSet.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/f3b9684f72bc2cc435eb694f7cc86eca8c240d2d1cefa1e8697a61f1f2f27f/SafeFileHandle.Windows.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -59,6 +60,8 @@
       <option name="presentableId" value="Default" />
       <updated>1686227353793</updated>
       <workItem from="1686227383753" duration="12103000" />
+      <workItem from="1686309933544" duration="1785000" />
+      <workItem from="1686323723561" duration="3527000" />
     </task>
     <servers />
   </component>
@@ -67,5 +70,29 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/sdgsdgsdgdsgds/Program.cs</url>
+          <line>95</line>
+          <properties documentPath="C:\Users\cat20\Desktop\CsharpCompiler\C-Compliler20\sdgsdgsdgdsgds\sdgsdgsdgdsgds\Program.cs" initialLine="95" containingFunctionPresentation="">
+            <startOffsets>
+              <option value="3871" />
+            </startOffsets>
+            <endOffsets>
+              <option value="3928" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="DotNetProject">
+        <watch expression="new System.Collections.Generic.ICollectionDebugView&lt;System.Reflection.LocalVariableInfo&gt;(insertBody).Items[11]" />
+      </configuration>
+    </watches-manager>
   </component>
 </project>

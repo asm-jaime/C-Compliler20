@@ -69,6 +69,7 @@ namespace OnlineCompiler.Server.Controllers
         [Route("HashSet")]
         public ExecutionInfo PostHashSet([FromBody] string? code)
         {
+            var hints = new List<string>();
             if (code == null)
             {
                 return null;
@@ -85,7 +86,8 @@ namespace OnlineCompiler.Server.Controllers
 
                 if (constructedType != null)
                 {
-                    var setInstance = Activator.CreateInstance(constructedType);
+                    HintReflectionHelper.GetReflectionHintsHashSet(code, constructedType, hints);
+                    /*var setInstance = Activator.CreateInstance(constructedType);
                     constructedType.GetMethod("Add").Invoke(setInstance, new Object[] {"firstElement"});
                     constructedType.GetMethod("Add").Invoke(setInstance, new Object[] {"firstElement"});
                     // В HashSet допустимы только уникальные элементы, 
@@ -95,7 +97,7 @@ namespace OnlineCompiler.Server.Controllers
                     {
                         throw new Exception(
                             $"Ошибка: ожидался размер 1, но получен размер {constructedType.GetProperty("Count").GetValue(setInstance)}");
-                    }
+                    }*/
                 }
             }
             catch (ArgumentException e)
@@ -108,7 +110,9 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
+            return hints.Count > 0
+                ? new ExecutionInfo(ExecutionInfo.ExecutionStatus.WithWarning, 111, "", hints)
+                : new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
         }
 
 
