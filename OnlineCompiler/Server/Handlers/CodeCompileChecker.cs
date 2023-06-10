@@ -2,8 +2,21 @@
 
 public static class CodeCompileChecker<T>
 {
-    public static object? Check(Stack<int> stack, Type constructedType, object? stackInstance)
+
+    public static bool CheckPushPushPop(Stack<T> stack, string code, T item)
     {
-        return false;
+        var stackType = DynamicClassCreator.CreateClassFromCode(code, "Stack");
+        Type constructedType = stackType.MakeGenericType(typeof(T));
+        var stackInstance = Activator.CreateInstance(constructedType);
+
+        stack.Push(item);
+        stack.Push(item);
+        constructedType.GetMethod("Push").Invoke(stackInstance, new object[] {item});
+        constructedType.GetMethod("Push").Invoke(stackInstance, new object[] {item});
+
+        var origin = stack.Pop();
+        var constructed = (T)constructedType.GetMethod("Pop").Invoke(stackInstance, null);
+
+        return origin.Equals(constructed);
     }
 }
