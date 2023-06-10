@@ -13,8 +13,8 @@
     <p>Словарь (Dictionary) - это структура данных, которая представляет собой набор пар "ключ-значение". Ключи должны быть уникальными, а значения могут повторяться.</p>
     <p>Словари используются для хранения и быстрого доступа к данным, которые можно идентифицировать уникальным ключом.</p>
 
-    <p>Вот визуальное представление внутренней структуры словар:</p>
-    <img src="6.png" alt="Визуальное представление внутренней структуры словар">
+    <p>Вот визуальное представление внутренней структуры словарь:</p>
+    <img src="2.jpg" width="70%" height="50%" alt="Визуальное представление внутренней структуры словарь">
 
     <h3>Основные операции со словарем</h3>
     <ul>
@@ -30,9 +30,7 @@
 
 @if (_userExecuted)
 {
-    <p>Код разработчиков:</p>
-    <br/>
-    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
+    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть полный код разработчиков</text>} else {<text>Показать полный код разработчиков</text>}</button>
     if (_showCode)
     {
         <p></p>
@@ -42,7 +40,7 @@
 }                                                                                                               
 
     <p></p>
-<p>Пишите свой тут, методы, которые нуждаются в реализации помечены комментарием "Нужна реализация": </p>
+<p>Пишите свой код тут, методы, которые нуждаются в реализации помечены комментарием "Нужна реализация": </p>
 <CodeEditor @bind-Code="_userInnerCode">@TemplateDictionary.UserDictionaryCode</CodeEditor>
 <br />
 <button class="btn btn-primary @(ExecuteButtonDisabled?"disabled":"")" @onclick="@(async () => { _userExecuted = true; await UserExecuteCode(); })">@_loc["Execute"]</button>
@@ -91,13 +89,6 @@
         }
     }
     <br />
-    if (_executionInfo != null && _executionInfo.Hints.Count > 0)
-    {
-        @foreach (string line in _executionInfo.Hints)
-        {
-            <p>@line</p>
-        }
-    }
     if (OutputSplitByNewLines != null)
     {
         @foreach (string line in OutputSplitByNewLines)
@@ -106,10 +97,93 @@
         }
         <p>Время: @_executionInfo.CompilerTime мс</p>
     }
+     if (_executionInfo != null && _executionInfo.Hints.Count > 0)
+    {
+        <br />
+        int addc = 0;
+        int removec = 0;
+        int findc = 0;
+        <div class="container">
+        <div class="row row-cols-1" style="margin-right: 10px; width: 350px; float:left;">
+            @if (_executionInfo.Hints.Any(x => x.Contains(addStr)) && showAdd)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="AddCode"><text>Показать подсказку по методу Add</text></button>
+            }
+            @if (_executionInfo.Hints.Any(x => x.Contains(removeStr)) && showRemove)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="RemoveCode"><text>Показать подсказку по методу Remove</text></button>
+            }
+            @if (_executionInfo.Hints.Any(x => x.Contains(findStr)) && showFind)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="FindCode"><text>Показать подсказку по методу Find</text></button>
+            }
+        </div>
+         <div class="row row-cols-1" style="margin-left: 10px;">
+
+        @foreach (string line in _executionInfo.Hints)
+        {
+            if (line.Contains(addStr) && addc < AddCount)
+            {
+                addc++;
+                <p>@line</p>
+                if (addc >= _executionInfo.Hints.Count(x => x.Contains(addStr)))
+                {
+                    showAdd = false;
+                }
+            }
+            else if (line.Contains(removeStr) && removec < RemoveCount)
+            {
+                removec++;
+                <p>@line</p>
+                if (removec >= _executionInfo.Hints.Count(x => x.Contains(removeStr)))
+                {
+                    showRemove = false;
+                }
+            }
+            else if (line.Contains(findStr) && findc < FindCount)
+            {
+                findc++;
+                <p>@line</p>
+                if (findc >= _executionInfo.Hints.Count(x => x.Contains(findStr)))
+                {
+                    showFind = false;
+                }
+            }
+        }
+        </div>
+        </div>
+    }
 }
 
 @code
 {
+    string addStr = "TryInsert";
+    string removeStr = "Remove";
+    string findStr = "FindValue";
+    
+    int AddCount = 0;
+    int RemoveCount = 0;
+    int FindCount = 0;
+    
+    bool showAdd = true;
+    bool showRemove = true;
+    bool showFind = true;
+    
+    void AddCode()
+    {
+        AddCount++;
+    }
+    
+    void RemoveCode()
+    {
+        RemoveCount++;
+    }
+    
+    void FindCode()
+    {
+        FindCount++;
+    }
+
     bool _showCode;
 
     void ToggleCode()

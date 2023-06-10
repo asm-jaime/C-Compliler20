@@ -2,8 +2,7 @@ namespace OnlineCompiler.Client.Pages;
 
 public static class TemplateList
 {
-    public static string ListCode = @"
-using System.Collections.ObjectModel;
+    public static string ListCode = @"using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 
 namespace System.Collections.Generic

@@ -154,7 +154,9 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
+            return hints.Count > 0
+                ? new ExecutionInfo(ExecutionInfo.ExecutionStatus.WithWarning, 111, "", hints)
+                : new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
         }
 
 
@@ -202,7 +204,9 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
+            return hints.Count > 0
+                ? new ExecutionInfo(ExecutionInfo.ExecutionStatus.WithWarning, 111, "", hints)
+                : new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
         }
 
 
@@ -210,6 +214,7 @@ namespace OnlineCompiler.Server.Controllers
         [Route("Stack")]
         public ExecutionInfo PostStack([FromBody] string? code)
         {
+            var hints = new List<string>();
             if (code == null)
             {
                 return null;
@@ -226,7 +231,8 @@ namespace OnlineCompiler.Server.Controllers
 
                 if (constructedType != null)
                 {
-                    var stackInstance = Activator.CreateInstance(constructedType);
+                    HintReflectionHelper.GetReflectionHintStack(code, constructedType, hints);
+                    /*var stackInstance = Activator.CreateInstance(constructedType);
                     constructedType.GetMethod("Push").Invoke(stackInstance, new Object[] {"firstElement"});
                     constructedType.GetMethod("Push").Invoke(stackInstance, new Object[] {"secondElement"});
 
@@ -241,7 +247,7 @@ namespace OnlineCompiler.Server.Controllers
                     if (!"firstElement".Equals(firstElement))
                     {
                         throw new Exception($"Ошибка: ожидался элемент 'firstElement', но получен {firstElement}");
-                    }
+                    }*/
                 }
             }
             catch (ArgumentException e)
@@ -254,13 +260,16 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
+            return hints.Count > 0
+                ? new ExecutionInfo(ExecutionInfo.ExecutionStatus.WithWarning, 111, "", hints)
+                : new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
         }
 
         [HttpPost]
         [Route("SortedList")]
         public ExecutionInfo PostSortedList([FromBody] string? code)
         {
+            var hints = new List<string>();
             if (code == null)
             {
                 return null;
@@ -277,7 +286,8 @@ namespace OnlineCompiler.Server.Controllers
 
                 if (constructedType != null)
                 {
-                    var sortedListInstance = Activator.CreateInstance(constructedType);
+                    HintReflectionHelper.GetReflectionHintSortedList(code, constructedType, hints);
+                    /*var sortedListInstance = Activator.CreateInstance(constructedType);
 
                     // Add elements
                     constructedType.GetMethod("Add")
@@ -292,7 +302,7 @@ namespace OnlineCompiler.Server.Controllers
                     if ((bool) removeResult == false)
                     {
                         throw new Exception("Error: Unable to remove an element.");
-                    }
+                    }*/
                 }
             }
             catch (ArgumentException e)
@@ -305,7 +315,9 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", new List<string>());
+            return hints.Count > 0
+                ? new ExecutionInfo(ExecutionInfo.ExecutionStatus.WithWarning, 111, "", hints)
+                : new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hints);
         }
 
 
@@ -399,7 +411,9 @@ namespace OnlineCompiler.Server.Controllers
                     $"Произошла ошибка при запуске: {ex}");
             }
 
-            return new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hint);
+            return hint.Count > 0
+                ? new ExecutionInfo(ExecutionInfo.ExecutionStatus.WithWarning, 111, "", hint)
+                : new ExecutionInfo(ExecutionInfo.ExecutionStatus.Finished, 111, "", hint);
         }
 
         /// <summary>

@@ -8,37 +8,30 @@
 
 <div class="container mt-4">
     <div class="text-center">
-        <h2>Связный список(List)</h2>
+        <h2>Лист(List)</h2>
     </div>
-    <p>Еще одна важная линейная структура данных, которая на первый взгляд похожа на массив, но отличается распределением памяти, внутренней организацией и способом выполнения основных операций вставки и удаления.</p>
-    <p>Связный список – это сеть узлов, каждый из которых содержит данные и указатель на следующий узел в цепочке. Также есть указатель на первый элемент – head. Если список пуст, то он указывает на null.</p>
-    <p>Связные списки используются для реализации файловых систем, хэш-таблиц и списков смежности.</p>
+    <p>Класс List из пространства имен System.Collections.Generic
+        представляет простейший список однотипных объектов. Класс List типизируется типом, объекты которого будут хранится в списке.</p>
+    <p>В отличие от массива, предоставляет набор методов, облегчающих работу, таких как добавление новых элементов</p>
     
-    <p>Вот визуальное представление внутренней структуры связного списка:</p>
-    <img src="5.png" alt="Визуальное представление внутренней структуры связного списка">
-    
-    <h4 class="mt-4">Типы связных списков:</h4>
-        <ul>
-            <li>Однонаправленный.</li>
-            <li>Двунаправленный.</li>
-        </ul>
+    <p>Визуальное представление внутренней структуры списка:</p>
+    <img src="1.jpg" height="600px" width="700px" alt="Визуальное представление внутренней структуры списка">
     
     <h4 class="mt-4">Основные операции со связными списками</h4>
     <ul>
-        <li>InsertAtEnd – вставка в конец.</li>
-        <li>InsertAtHead – вставка в начало.</li>
-        <li>Delete – удаление указанного элемента.</li>
-        <li>DeleteAtHead – удаление первого элемента.</li>
-        <li>Search – получение указанного элемента.</li>
-        <li>isEmpty – возвращает true, если связный список пуст.</li>
+        <li>Add – вставка элемента.</li>
+        <li>Contains(T) – проверка наличия элемента.</li>
+        <li>Finf – поиск указанного элемента.</li>
+        <li>Remove – удаление элемента.</li>
+        <li>Sort – сортировка.</li>
+        <li>IndexOf – поиск индекса входного значения.</li>
     </ul>
 </div>
 
 
 @if (_userExecuted)
 {
-    <br/>
-    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
+    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть полный код разработчиков</text>} else {<text>Показать полный код разработчиков</text>}</button>
     if (_showCode)
     {
         <p></p>
@@ -98,14 +91,6 @@
             break;
         }
     }
-    <br />
-    if (_executionInfo != null && _executionInfo.Hints.Count > 0)
-    {
-        @foreach (string line in _executionInfo.Hints)
-        {
-            <p>@line</p>
-        }
-    }
     if (OutputSplitByNewLines != null)
     {
         @foreach (string line in OutputSplitByNewLines)
@@ -114,11 +99,94 @@
         }
         <p>Время: @_executionInfo.CompilerTime мс</p>
     }
+    if (_executionInfo != null && _executionInfo.Hints.Count > 0)
+    {
+        <br />
+        int addc = 0;
+        int removec = 0;
+        int findc = 0;
+        <div class="container">
+        <div class="row row-cols-1" style="margin-right: 10px; width: 350px; float:left;">
+            @if (_executionInfo.Hints.Any(x => x.Contains(addStr)) && showAdd)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="AddCode"><text>Показать подсказку по методу Add</text></button>
+            }
+            @if (_executionInfo.Hints.Any(x => x.Contains(removeStr)) && showRemove)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="RemoveCode"><text>Показать подсказку по методу Remove</text></button>
+            }
+            @if (_executionInfo.Hints.Any(x => x.Contains(findStr)) && showFind)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="FindCode"><text>Показать подсказку по методу Find</text></button>
+            }
+        </div>
+         <div class="row row-cols-1" style="margin-left: 10px;">
+
+        @foreach (string line in _executionInfo.Hints)
+        {
+            if (line.Contains(addStr) && addc < AddCount)
+            {
+                addc++;
+                <p>@line</p>
+                if (addc >= _executionInfo.Hints.Count(x => x.Contains(addStr)))
+                {
+                    showAdd = false;
+                }
+            }
+            else if (line.Contains(removeStr) && removec < RemoveCount)
+            {
+                removec++;
+                <p>@line</p>
+                if (removec >= _executionInfo.Hints.Count(x => x.Contains(removeStr)))
+                {
+                    showRemove = false;
+                }
+            }
+            else if (line.Contains(findStr) && findc < FindCount)
+            {
+                findc++;
+                <p>@line</p>
+                if (findc >= _executionInfo.Hints.Count(x => x.Contains(findStr)))
+                {
+                    showFind = false;
+                }
+            }
+        }
+        </div>
+        </div>
+    }
 }
 
 
 @code
 {
+    string addStr = "Add";
+    string removeStr = "Remove";
+    string findStr = "Find";
+    
+    int AddCount = 0;
+    int RemoveCount = 0;
+    int FindCount = 0;
+    
+    bool showAdd = true;
+    bool showRemove = true;
+    bool showFind = true;
+    
+    void AddCode()
+    {
+        AddCount++;
+    }
+    
+    void RemoveCode()
+    {
+        RemoveCount++;
+    }
+    
+    void FindCode()
+    {
+        FindCount++;
+    }
+    
     bool _showCode;
 
     void ToggleCode()

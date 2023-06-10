@@ -540,4 +540,117 @@ public static class HintReflectionHelper
             hints.Add("Метод Dequeue: Сместите указатель _head при помощи MoveNext()");
         }
     }
+
+    public static void GetReflectionHintSortedList(string code, Type constructedType, List<string> hints)
+    {
+        //AddTest
+        var userMethodCode = GetUserCode("public void Add(TKey key, TValue value)",
+            "void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> keyValuePair)",
+            code);
+
+        if (!userMethodCode.Contains("key == null") && !userMethodCode.Contains("key is null"))
+        {
+            hints.Add("Метод Add: Добавить проверку key на null");
+        }
+
+        if (!userMethodCode.Contains("Array.BinarySearch"))
+        {
+            hints.Add("Метод Add: Для поиска по keys используйте Array.BinarySearch");
+        }
+
+        if (!userMethodCode.Contains("Insert("))
+        {
+            hints.Add("Метод Add: Для вставки элемента рекомендуется воспользоваться Insert()");
+        }
+
+        //Remove test
+
+        userMethodCode = GetUserCode("public void RemoveAt(int index)",
+            "public bool Remove(TKey key)", code);
+
+        if (!userMethodCode.Contains("_size"))
+        {
+            hints.Add(
+                "Метод RemoveAt: Добавьте обработку _size. Необходимо проверять выход за пределы массива и уменьшать _size при удалении");
+        }
+
+        if (!userMethodCode.Contains("Array.Copy"))
+        {
+            hints.Add("Метод RemoveAt: Если index меньше _size рекомендуется использовать Array.Copy");
+        }
+
+        if (!userMethodCode.Contains("IsReferenceOrContainsReferences"))
+        {
+            hints.Add("Метод RemoveAt: Добавьте проверку с условием RuntimeHelpers.IsReferenceOrContainsReferences");
+        }
+
+        if (!userMethodCode.Contains("version"))
+        {
+            hints.Add("Метод RemoveAt: Необходимо увеличивать значение version");
+        }
+
+
+        //FindTest IndexOfKey
+        userMethodCode = GetUserCode("public int IndexOfKey(TKey key)",
+            "public int IndexOfValue(TValue value)", code);
+
+        if (!userMethodCode.Contains("BinarySearch"))
+        {
+            hints.Add("Метод IndexOfKey: Для поиска значений рекомендуется использовать Array.BinarySearch");
+        }
+    }
+
+    public static void GetReflectionHintStack(string code, Type constructedType, List<string> hints)
+    {
+        //AddTest
+        var userMethodCode = GetUserCode("public void Push(T item)",
+            "private void PushWithResize(T item)",
+            code);
+
+        if (!userMethodCode.Contains("PushWithResize"))
+        {
+            hints.Add("Метод Push: Добавить использоваие PushWithResize при нехватке размера массива");
+        }
+
+        if (!userMethodCode.Contains("uint"))
+        {
+            hints.Add("Метод Push: Для работы с size необходим каст к uint");
+        }
+
+        if (!userMethodCode.Contains("_version"))
+        {
+            hints.Add("Метод Push: Необходимо обрабатывать _version");
+        }
+        
+        if (!userMethodCode.Contains("_array"))
+        {
+            hints.Add("Метод Push: Используйте _array для вставки");
+        }
+
+        //Remove test
+
+        userMethodCode = GetUserCode("public T Pop()",
+            "public bool TryPop(out T result)", code);
+        
+        if (!userMethodCode.Contains("_version"))
+        {
+            hints.Add("Метод Pop: Необходимо обрабатывать _version");
+        }
+
+        if (!userMethodCode.Contains("ThrowForEmptyStack"))
+        {
+            hints.Add(
+                "Метод Pop: Для обработки исключения пустого Stack используйте ThrowForEmptyStack()");
+        }
+
+        if (!userMethodCode.Contains("IsReferenceOrContainsReferences"))
+        {
+            hints.Add("Метод Pop: Добавьте проверку с использованием RuntimeHelpers.IsReferenceOrContainsReferences");
+        }
+
+        if (!userMethodCode.Contains("default"))
+        {
+            hints.Add("Метод Pop: Для удаления элемента рекомендуется использовать присвоение default");
+        }
+    }
 }

@@ -14,21 +14,8 @@
     </p>
     <p>ObservableCollection является полезным классом в сценариях, где требуется отслеживание изменений коллекции и обновление пользовательского интерфейса или выполнение дополнительных действий при изменениях.
     </p>
-    <h3>Пример использования наблюдаемой коллекции</h3>
-
-    <p>Вот пример использования наблюдаемой коллекции:</p>
-    <pre>
-        <code>
-            ObservableCollection&lt;string&gt; collection = new ObservableCollection&lt;string&gt;();
-            collection.CollectionChanged += CollectionChangedEventHandler;
-            
-            void CollectionChangedEventHandler(object sender, NotifyCollectionChangedEventArgs e)
-            {
-                // Обработка изменений в коллекции
-            }
-        </code>
-    </pre>
-
+        <p>Визуальное представление ObservableCollection:</p>
+        <img height="50%" width="50%" src="5.jpg">
     <h3>В классе ObservableCollection можно выделить следующие методы:</h3>
     <ul>
         <li>Add: добавляет элемент в коллекцию</li>
@@ -40,16 +27,14 @@
 
 @if (_userExecuted)
 {
-    <br/>
-    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
+    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть полный код разработчиков</text>} else {<text>Показать полный код разработчиков</text>}</button>
     if (_showCode)
     {
         <p></p>
         <CodeEditor @bind-Code="_innerCode">@TemplateObservableCollection.ObservableCollectionCode
         </CodeEditor>
         <br/>
-
-        }
+    }
 }                                                                                                               
 
 <p></p>
@@ -122,6 +107,33 @@
 
 @code
 {
+    string addStr = "Add";
+    string removeStr = "Remove";
+    string findStr = "Find";
+    
+    int AddCount = 0;
+    int RemoveCount = 0;
+    int FindCount = 0;
+    
+    bool showAdd = true;
+    bool showRemove = true;
+    bool showFind = true;
+    
+    void AddCode()
+    {
+        AddCount++;
+    }
+    
+    void RemoveCode()
+    {
+        RemoveCount++;
+    }
+    
+    void FindCode()
+    {
+        FindCount++;
+    }
+
     bool _showCode;
 
     void ToggleCode()

@@ -14,10 +14,8 @@
     </p>
     <p>Связанный список является гибкой структурой данных, так как он позволяет добавлять, удалять и изменять элементы без необходимости перемещения всех элементов. Это отличает его от массива, где элементы хранятся в смежных ячейках памяти.
     </p>
-    <h3>Пример использования связанного списка</h3>
-
-    <p>Вот визуальное представление внутренней структуры Связанного списка:</p>
-    <img src="linkedlist.png" alt="Визуальное представление внутренней структуры связанного списка">
+    <p>Визуальное представление внутренней структуры Связанного списка:</p>
+    <img src="4.jpg" width="1200px;" alt="Визуальное представление внутренней структуры связанного списка">
 
     <h3>В классе LinkedList можно выделить следующие методы:</h3>
     <ul>
@@ -32,8 +30,7 @@
 
 @if (_userExecuted)
 {
-    <br/>
-    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть подсказку</text>} else {<text>Показать подсказку</text>}</button>
+    <button class="btn btn-warning" @onclick="ToggleCode">@if (_showCode) {<text>Скрыть полный код разработчиков</text>} else {<text>Показать полный код разработчиков</text>}</button>
     if (_showCode)
     {
         <p></p>
@@ -94,13 +91,6 @@
         }
     }
     <br />
-    if (_executionInfo != null && _executionInfo.Hints.Count > 0)
-    {
-        @foreach (string line in _executionInfo.Hints)
-        {
-            <p>@line</p>
-        }
-    }
     if (OutputSplitByNewLines != null)
     {
         @foreach (string line in OutputSplitByNewLines)
@@ -109,11 +99,94 @@
         }
         <p>Время: @_executionInfo.CompilerTime мс</p>
     }
+     if (_executionInfo != null && _executionInfo.Hints.Count > 0)
+    {
+        <br />
+        int addc = 0;
+        int removec = 0;
+        int findc = 0;
+        <div class="container">
+        <div class="row row-cols-1" style="margin-right: 10px; width: 350px; float:left;">
+            @if (_executionInfo.Hints.Any(x => x.Contains(addStr)) && showAdd)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="AddCode"><text>Показать подсказку по методу Add</text></button>
+            }
+            @if (_executionInfo.Hints.Any(x => x.Contains(removeStr)) && showRemove)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="RemoveCode"><text>Показать подсказку по методу Remove</text></button>
+            }
+            @if (_executionInfo.Hints.Any(x => x.Contains(findStr)) && showFind)
+            {
+                <button style="margin-bottom: 7px" class="btn btn-info" @onclick="FindCode"><text>Показать подсказку по методу Find</text></button>
+            }
+        </div>
+         <div class="row row-cols-1" style="margin-left: 10px;">
+
+        @foreach (string line in _executionInfo.Hints)
+        {
+            if (line.Contains(addStr) && addc < AddCount)
+            {
+                addc++;
+                <p>@line</p>
+                if (addc >= _executionInfo.Hints.Count(x => x.Contains(addStr)))
+                {
+                    showAdd = false;
+                }
+            }
+            else if (line.Contains(removeStr) && removec < RemoveCount)
+            {
+                removec++;
+                <p>@line</p>
+                if (removec >= _executionInfo.Hints.Count(x => x.Contains(removeStr)))
+                {
+                    showRemove = false;
+                }
+            }
+            else if (line.Contains(findStr) && findc < FindCount)
+            {
+                findc++;
+                <p>@line</p>
+                if (findc >= _executionInfo.Hints.Count(x => x.Contains(findStr)))
+                {
+                    showFind = false;
+                }
+            }
+        }
+        </div>
+        </div>
+    }
 }
 
 
 @code
 {
+    string addStr = "Add";
+    string removeStr = "Remove";
+    string findStr = "Find";
+    
+    int AddCount = 0;
+    int RemoveCount = 0;
+    int FindCount = 0;
+    
+    bool showAdd = true;
+    bool showRemove = true;
+    bool showFind = true;
+    
+    void AddCode()
+    {
+        AddCount++;
+    }
+    
+    void RemoveCode()
+    {
+        RemoveCount++;
+    }
+    
+    void FindCode()
+    {
+        FindCount++;
+    }
+
     bool _showCode;
 
     void ToggleCode()
