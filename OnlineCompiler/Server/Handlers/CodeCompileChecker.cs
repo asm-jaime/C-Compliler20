@@ -21,7 +21,7 @@ public static class CodeCompileChecker<T>
     private static (Type, object) GetInstanceOfSortedList(string code)
     {
         var type = DynamicClassCreator.CreateClassFromCode(code, "SortedList");
-        Type constructedType = type.MakeGenericType(typeof(T), typeof(T));
+        Type constructedType = type.MakeGenericType(typeof(string), typeof(T));
         var instance = Activator.CreateInstance(constructedType);
         return (constructedType, instance);
     }
@@ -63,19 +63,19 @@ public static class CodeCompileChecker<T>
             && CheckLinkedList<T>.CheckContains(list, type, instance, item);
     }
 
-    public static bool CheckSortedList(string code, T item)
+    public static bool CheckSortedList(string code, T first, T second)
     {
-        SortedList<T, T> list = new SortedList<T, T>();
+        SortedList<string, T> list = new SortedList<string, T>();
         var (type, instance) = GetInstanceOfSortedList(code);
 
-        var item1 = new KeyValuePair<T, T>(item, item);
-        var item2 = new KeyValuePair<T, T>(item, item);
+        var item1 = new KeyValuePair<string, T>("first", first);
+        var item2 = new KeyValuePair<string, T>("second", second);
 
         return CheckSortedList<T>.CheckAdd(type, instance, item1)
-            //&& CheckSortedList<T>.CheckContainsKey(type, instance, item1.Key)
-            //&& CheckSortedList<T>.CheckRemove(type, instance, item1.Key)
-            && CheckSortedList<T>.CheckClear(type, instance);
-        //&& CheckSortedList<T>.CheckIsSorted(type, instance, item1, item2);
+            && CheckSortedList<T>.CheckContainsKey(type, instance, item1.Key)
+            && CheckSortedList<T>.CheckRemove(type, instance, item1.Key)
+            && CheckSortedList<T>.CheckClear(type, instance)
+            && CheckSortedList<T>.CheckIsSorted(type, instance, item1, item2);
     }
 
     public static bool CheckQueue(string code, T item)
@@ -97,7 +97,7 @@ public static class CodeCompileChecker<T>
         return CheckHashSet<T>.CheckAdd(set, type, instance, item)
             && CheckHashSet<T>.CheckRemove(set, type, instance, item)
             && CheckHashSet<T>.CheckClear(set, type, instance, item)
-            && CheckHashSet<T>.CheckContains(set, type, instance, item)
+            && CheckHashSet<T>.CheckContains(set, type, instance, default(T))
             && CheckHashSet<T>.CheckUnionSet(set, type, instance, new HashSet<T>());
     }
     public static bool CheckDictionary(string code, string key, T value)
