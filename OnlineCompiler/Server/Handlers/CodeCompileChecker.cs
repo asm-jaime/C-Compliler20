@@ -111,5 +111,16 @@ public static class CodeCompileChecker<T>
             && CheckDictionary<T>.CheckContainsKey(dict, type, instance, key)
             && CheckDictionary<T>.CheckContainsValue(dict, type, instance, value);
     }
+
+    public static bool CheckObservableCollection(string code, T item)
+    {
+        var (type, instance) = GetInstance(code, "ObservableCollection");
+
+        return CheckObservableCollection<T>.CheckAdd(type, instance, item)
+            && CheckObservableCollection<T>.CheckRemove(type, instance, item)
+            && CheckObservableCollection<T>.CheckClear(type, instance)
+            && CheckObservableCollection<T>.CheckInsert(type, instance, item)
+            && CheckObservableCollection<T>.CheckContains(type, instance, item);
+    }
 }
 
