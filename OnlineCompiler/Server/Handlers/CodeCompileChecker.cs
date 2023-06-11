@@ -22,5 +22,17 @@ public static class CodeCompileChecker<T>
             && CheckStack<T>.CheckContains(stack, type, instance, item)
             && CheckStack<T>.CheckToArray(stack, type, instance, item);
     }
+
+    public static bool CheckList(string code, T item)
+    {
+        List<T> list = new List<T>();
+        var (type, instance) = GetInstance(code, "List");
+
+        return CheckList<T>.CheckAdd(list, type, instance, item)
+            && CheckList<T>.CheckRemove(list, type, instance, item)
+            && CheckList<T>.CheckInsert(list, type, instance, item)
+            && CheckList<T>.CheckClear(list, type, instance, item)
+            && CheckList<T>.CheckContains(list, type, instance, item);
+    }
 }
 

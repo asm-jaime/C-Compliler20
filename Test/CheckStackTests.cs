@@ -1,5 +1,14 @@
-﻿/*
-using System.Runtime.CompilerServices;
+﻿using NUnit.Framework;
+using OnlineCompiler.Client.Pages;
+using OnlineCompiler.Server.Handlers;
+
+namespace test;
+
+[TestFixture]
+public class CheckStackTests
+{
+    private static string _invalidStackCode = @"
+    using System.Runtime.CompilerServices;
 
 namespace System.Collections.Generic
 {
@@ -85,7 +94,7 @@ namespace System.Collections.Generic
             {
                 throw new InvalidOperationException();
             }
-
+            
             int srcIndex = 0;
             int dstIndex = arrayIndex + _size;
             while (srcIndex < _size)
@@ -192,10 +201,11 @@ namespace System.Collections.Generic
         // throws an InvalidOperationException.
         public T Pop()
         {
-            //Нужна реализация
-            T result = default!;
-            return result;
-            //throw new NotImplementedException();
+             T result = default!;
+             return result;
+             //Нужна реализация
+             //throw new NotImplementedException();
+
         }
 
         public bool TryPop(out T result)
@@ -222,10 +232,10 @@ namespace System.Collections.Generic
         // Pushes an item to the top of the stack.
         public void Push(T item)
         {
-            //Нужна реализация
-            throw new NotImplementedException();
+             //Нужна реализация
+             //throw new NotImplementedException();
         }
-
+        
         private void PushWithResize(T item)
         {
             Array.Resize(ref _array, (_array.Length == 0) ? DefaultCapacity : 2 * _array.Length);
@@ -328,5 +338,15 @@ namespace System.Collections.Generic
             }
         }
     }
+}";
+    private static string _validStackCode = TemplateStack.StackCode;
+
+    [Test]
+    public void TestStack()
+    {
+        Assert.AreEqual(CodeCompileChecker<int>.CheckStack(_invalidStackCode, 8), false);
+        Assert.AreEqual(CodeCompileChecker<int>.CheckStack(_validStackCode, 8), true);
+    }
+
 }
-*/
+
