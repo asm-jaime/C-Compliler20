@@ -5,7 +5,7 @@ public static class CheckHashSet<T>
     public static bool CheckAdd(HashSet<T> set, Type type, object instance, T item)
     {
         set.Add(item);
-        type.GetMethod("Add", new[] { typeof(T) }).Invoke(instance, new object[] { item });
+        var result = (bool)type.GetMethod("Add", new[] { typeof(T) }).Invoke(instance, new object[] { item });
 
         return set.Count == (int)type.GetProperty("Count").GetValue(instance);
     }
@@ -33,7 +33,8 @@ public static class CheckHashSet<T>
     public static bool CheckContains(HashSet<T> set, Type type, object instance, T item)
     {
         set.Add(item);
-        type.GetMethod("Add", new[] { typeof(T) }).Invoke(instance, new object[] { item });
+        //type.GetMethod("Add", new[] { typeof(T) }).Invoke(instance, new object[] { item });
+        var result = (bool)type.GetMethod("Add", new[] { typeof(T) }).Invoke(instance, new object[] { item });
 
         bool originContains = set.Contains(item);
         bool constructedContains = (bool)type.GetMethod("Contains").Invoke(instance, new object[] { item });
@@ -41,14 +42,13 @@ public static class CheckHashSet<T>
         return originContains == constructedContains;
     }
 
-    public static bool CheckIsSubsetOf(HashSet<T> set, Type type, object instance, HashSet<T> otherSet)
+    public static bool CheckUnionSet(HashSet<T> set, Type type, object instance, HashSet<T> otherSet)
     {
+        otherSet.Add(default(T));
         set.UnionWith(otherSet);
+
         type.GetMethod("UnionWith").Invoke(instance, new object[] { otherSet });
 
-        bool originIsSubset = set.IsSubsetOf(otherSet);
-        bool constructedIsSubset = (bool)type.GetMethod("IsSubsetOf").Invoke(instance, new object[] { otherSet });
-
-        return originIsSubset == constructedIsSubset;
+        return set.Count == (int)type.GetProperty("Count").GetValue(instance);
     }
 }

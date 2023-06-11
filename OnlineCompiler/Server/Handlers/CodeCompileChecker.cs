@@ -98,7 +98,7 @@ public static class CodeCompileChecker<T>
             && CheckHashSet<T>.CheckRemove(set, type, instance, item)
             && CheckHashSet<T>.CheckClear(set, type, instance, item)
             && CheckHashSet<T>.CheckContains(set, type, instance, item)
-            && CheckHashSet<T>.CheckIsSubsetOf(set, type, instance, new HashSet<T>());
+            && CheckHashSet<T>.CheckUnionSet(set, type, instance, new HashSet<T>());
     }
     public static bool CheckDictionary(string code, string key, T value)
     {

@@ -480,6 +480,7 @@ namespace System.Collections.Generic
         {
             //Нужна реализация
             //throw new NotImplementedException();
+            location = 0;
             return false;
         }
 
@@ -584,8 +585,8 @@ namespace System.Collections.Generic
         [Test]
         public void TestHashSet()
         {
-            Assert.AreEqual(CodeCompileChecker<int>.CheckHashSet(_validHashSetCode, 8), true);
-            //Assert.AreEqual(CodeCompileChecker<int>.CheckHashSet(_invalidHashSetCode, 8), false);
+            Assert.AreEqual(CodeCompileChecker<string>.CheckHashSet(_validHashSetCode, "8"), true);
+            Assert.AreEqual(CodeCompileChecker<string>.CheckHashSet(_invalidHashSetCode, "8"), false);
         }
     }
 }
