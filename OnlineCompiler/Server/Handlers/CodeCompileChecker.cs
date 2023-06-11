@@ -9,6 +9,14 @@ public static class CodeCompileChecker<T>
         var instance = Activator.CreateInstance(constructedType);
         return (constructedType, instance);
     }
+    
+    private static (Type, object) GetInstanceOfDictionary(string code)
+    {
+        var type = DynamicClassCreator.CreateClassFromCode(code, "Dictionary");
+        Type constructedType = type.MakeGenericType(typeof(string), typeof(T));
+        var instance = Activator.CreateInstance(constructedType);
+        return (constructedType, instance);
+    }
 
     private static (Type, object) GetInstanceOfSortedList(string code)
     {
@@ -92,6 +100,16 @@ public static class CodeCompileChecker<T>
             && CheckHashSet<T>.CheckContains(set, type, instance, item)
             && CheckHashSet<T>.CheckIsSubsetOf(set, type, instance, new HashSet<T>());
     }
+    public static bool CheckDictionary(string code, string key, T value)
+    {
+        Dictionary<string, T> dict = new Dictionary<string, T>();
+        var (type, instance) = GetInstanceOfDictionary(code);
 
+        return CheckDictionary<T>.CheckAdd(dict, type, instance, new KeyValuePair<string, T>(key, value))
+            && CheckDictionary<T>.CheckRemove(dict, type, instance, new KeyValuePair<string, T>("new", value))
+            && CheckDictionary<T>.CheckClear(dict, type, instance)
+            && CheckDictionary<T>.CheckContainsKey(dict, type, instance, key)
+            && CheckDictionary<T>.CheckContainsValue(dict, type, instance, value);
+    }
 }
 
