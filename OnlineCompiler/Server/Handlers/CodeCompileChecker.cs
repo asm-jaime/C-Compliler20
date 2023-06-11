@@ -69,5 +69,18 @@ public static class CodeCompileChecker<T>
             && CheckSortedList<T>.CheckClear(type, instance);
             //&& CheckSortedList<T>.CheckIsSorted(type, instance, item1, item2);
     }
+
+    public static bool CheckQueue(string code, T item)
+    {
+        Queue<T> queue = new Queue<T>();
+        var (type, instance) = GetInstance(code, "Queue");
+
+        return CheckQueue<T>.CheckEnqueue(queue, type, instance, item)
+            && CheckQueue<T>.CheckDequeue(queue, type, instance)
+            && CheckQueue<T>.CheckPeek(queue, type, instance, item)
+            && CheckQueue<T>.CheckClear(queue, type, instance)
+            && CheckQueue<T>.CheckContains(queue, type, instance, item);
+    }
+
 }
 
