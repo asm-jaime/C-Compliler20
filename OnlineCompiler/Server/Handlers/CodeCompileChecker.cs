@@ -34,5 +34,17 @@ public static class CodeCompileChecker<T>
             && CheckList<T>.CheckClear(list, type, instance, item)
             && CheckList<T>.CheckContains(list, type, instance, item);
     }
+
+    public static bool CheckLinkedList(string code, T item)
+    {
+        LinkedList<T> list = new LinkedList<T>();
+        var (type, instance) = GetInstance(code, "LinkedList");
+
+        return CheckLinkedList<T>.CheckAddLast(list, type, instance, item)
+            && CheckLinkedList<T>.CheckAddFirst(list, type, instance, item)
+            && CheckLinkedList<T>.CheckRemove(list, type, instance, item)
+            && CheckLinkedList<T>.CheckClear(list, type, instance, item)
+            && CheckLinkedList<T>.CheckContains(list, type, instance, item);
+    }
 }
 
