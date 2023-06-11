@@ -67,7 +67,7 @@ public static class CodeCompileChecker<T>
             //&& CheckSortedList<T>.CheckContainsKey(type, instance, item1.Key)
             //&& CheckSortedList<T>.CheckRemove(type, instance, item1.Key)
             && CheckSortedList<T>.CheckClear(type, instance);
-            //&& CheckSortedList<T>.CheckIsSorted(type, instance, item1, item2);
+        //&& CheckSortedList<T>.CheckIsSorted(type, instance, item1, item2);
     }
 
     public static bool CheckQueue(string code, T item)
@@ -80,6 +80,17 @@ public static class CodeCompileChecker<T>
             && CheckQueue<T>.CheckPeek(queue, type, instance, item)
             && CheckQueue<T>.CheckClear(queue, type, instance)
             && CheckQueue<T>.CheckContains(queue, type, instance, item);
+    }
+    public static bool CheckHashSet(string code, T item)
+    {
+        HashSet<T> set = new HashSet<T>();
+        var (type, instance) = GetInstance(code, "HashSet");
+
+        return CheckHashSet<T>.CheckAdd(set, type, instance, item)
+            && CheckHashSet<T>.CheckRemove(set, type, instance, item)
+            && CheckHashSet<T>.CheckClear(set, type, instance, item)
+            && CheckHashSet<T>.CheckContains(set, type, instance, item)
+            && CheckHashSet<T>.CheckIsSubsetOf(set, type, instance, new HashSet<T>());
     }
 
 }
