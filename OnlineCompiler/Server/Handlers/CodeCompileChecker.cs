@@ -10,6 +10,14 @@ public static class CodeCompileChecker<T>
         return (constructedType, instance);
     }
 
+    private static (Type, object) GetInstanceOfSortedList(string code)
+    {
+        var type = DynamicClassCreator.CreateClassFromCode(code, "SortedList");
+        Type constructedType = type.MakeGenericType(typeof(T), typeof(T));
+        var instance = Activator.CreateInstance(constructedType);
+        return (constructedType, instance);
+    }
+
     public static bool CheckStack(string code, T item)
     {
         Stack<T> stack = new Stack<T>();
@@ -45,6 +53,21 @@ public static class CodeCompileChecker<T>
             && CheckLinkedList<T>.CheckRemove(list, type, instance, item)
             && CheckLinkedList<T>.CheckClear(list, type, instance, item)
             && CheckLinkedList<T>.CheckContains(list, type, instance, item);
+    }
+
+    public static bool CheckSortedList(string code, T item)
+    {
+        SortedList<T, T> list = new SortedList<T, T>();
+        var (type, instance) = GetInstanceOfSortedList(code);
+
+        var item1 = new KeyValuePair<T, T>(item, item);
+        var item2 = new KeyValuePair<T, T>(item, item);
+
+        return CheckSortedList<T>.CheckAdd(type, instance, item1)
+            //&& CheckSortedList<T>.CheckContainsKey(type, instance, item1.Key)
+            //&& CheckSortedList<T>.CheckRemove(type, instance, item1.Key)
+            && CheckSortedList<T>.CheckClear(type, instance);
+            //&& CheckSortedList<T>.CheckIsSorted(type, instance, item1, item2);
     }
 }
 
