@@ -12,7 +12,7 @@ public static class HintReflectionHelper
         return userMethodCode;
     }
 
-    public static void GetReflectionHints(string code, Type constructedType, List<string> hints)
+    public static void GetReflectionHintsDictionary(string code, Type constructedType, List<string> hints)
     {
         //TryInsertTest
         var insertMethod = constructedType.GetMethod("TryInsert",
@@ -485,7 +485,7 @@ public static class HintReflectionHelper
         }
     }
 
-    public static void GetReflectionHintQueue(string code, Type constructedType, List<string> hints)
+    public static void GetReflectionHintsQueue(string code, Type constructedType, List<string> hints)
     {
         //AddTest
         var userMethodCode = GetUserCode("public void Enqueue(T item)",
@@ -541,7 +541,7 @@ public static class HintReflectionHelper
         }
     }
 
-    public static void GetReflectionHintSortedList(string code, Type constructedType, List<string> hints)
+    public static void GetReflectionHintsSortedList(string code, Type constructedType, List<string> hints)
     {
         //AddTest
         var userMethodCode = GetUserCode("public void Add(TKey key, TValue value)",
@@ -600,7 +600,7 @@ public static class HintReflectionHelper
         }
     }
 
-    public static void GetReflectionHintStack(string code, Type constructedType, List<string> hints)
+    public static void GetReflectionHintsStack(string code, Type constructedType, List<string> hints)
     {
         //AddTest
         var userMethodCode = GetUserCode("public void Push(T item)",
